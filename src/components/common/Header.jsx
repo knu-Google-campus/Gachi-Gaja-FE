@@ -2,6 +2,7 @@ import styled from "styled-components"
 import Inner from "../layout/Inner"
 import { FaPlane } from "react-icons/fa"
 
+// 배경 색상 추가
 const HeaderWrapper = styled.header`
   width: 100%;
   height: 60px;
@@ -10,6 +11,7 @@ const HeaderWrapper = styled.header`
   align-items: center;
   padding: 0 20px;
   border-bottom: 1px solid #e5e7eb;
+  background-color: #ffffff; 
 `
 
 const Logo = styled.div`

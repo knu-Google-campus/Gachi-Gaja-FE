@@ -51,6 +51,27 @@ const variantStyles = {
       background-color: #15803d;
     }
   `,
+  secondary: css`
+    background-color: white;
+    color: #2563eb;
+    border: 2px solid #2563eb;
+    
+    &:hover:not(:disabled) {
+      background-color: #f8faff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+    
+    &:focus:not(:disabled) {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    
+    &:active:not(:disabled) {
+      transform: translateY(0);
+      background-color: #f0f5ff;
+    }
+  `,
   disabled: css`
     background-color: #d1d5db;
     color: #9ca3af;

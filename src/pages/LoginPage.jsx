@@ -100,7 +100,7 @@ const Input = styled.input`
   font-size: 1rem;
   background: #fff;
   color: #1a1a1a;
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
 
   &:focus {
     outline: none;

@@ -7,7 +7,7 @@ import Footer from "../components/common/Footer"
 import { useState } from "react"
 
 // 배경 그라데이션 및 애니메이션 효과가 있는 메인 컨테이너
-const PageContainer = styled.div`
+export const PageContainer = styled.div`
   min-height: calc(100vh - 140px);
   display: flex;
   align-items: center;
@@ -35,7 +35,7 @@ const PageContainer = styled.div`
 `
 
 // 로그인 섹션
-const LoginSection = styled.div`
+export const LoginSection = styled.div`
   width: 100%;
   max-width: 420px;
   padding: 48px 40px;
@@ -48,12 +48,12 @@ const LoginSection = styled.div`
 `
 
 // 타이틀 섹션
-const TitleSection = styled.div`
+export const TitleSection = styled.div`
   margin-bottom: 40px;
   text-align: center;
 `
 
-const MainTitle = styled.h1`
+export const MainTitle = styled.h1`
   font-size: 2.5rem;
   font-weight: 800;
   color: #000;
@@ -65,34 +65,34 @@ const MainTitle = styled.h1`
   }
 `
 
-const SubTitle = styled.p`
+export const SubTitle = styled.p`
   font-size: 1.1rem;
   color: #64748b;
   font-weight: 500;
 `
 
 // 입력 폼 스타일링
-const InputWrapper = styled.div`
+export const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
   margin-bottom: 32px;
 `
 
-const InputGroup = styled.div`
+export const InputGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
 `
 
-const Label = styled.label`
+export const Label = styled.label`
   font-weight: 600;
   color: #374151;
   font-size: 0.95rem;
   margin-left: 4px;
 `
 
-const Input = styled.input`
+export const Input = styled.input`
   width: 100%;
   padding: 16px 20px;
   border: 2px solid #e2e8f0;
@@ -113,12 +113,12 @@ const Input = styled.input`
   }
 `
 
-const ButtonWrapper = styled.div`
+export const ButtonWrapper = styled.div`
   margin-bottom: 24px;
 `
 
 // 회원가입 링크 스타일링
-const SignupText = styled.p`
+export const SignupText = styled.p`
   text-align: center;
   color: #64748b;
   font-size: 0.95rem;

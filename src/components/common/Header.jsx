@@ -9,7 +9,7 @@ const HeaderWrapper = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 5px;
   border-bottom: 1px solid #e5e7eb;
   background-color: #ffffff; 
 `
@@ -34,7 +34,7 @@ const Header = ({ right }) => {
       <Inner flex="true">
         <Logo>
           <FaPlane />
-          플랜투게더
+          같이가자
         </Logo>
         <RightBox>{right}</RightBox>
       </Inner>

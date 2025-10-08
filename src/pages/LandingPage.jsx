@@ -1,9 +1,9 @@
-"use client"
 import styled from "styled-components"
 import Button from "../components/common/Button"
 import Header from "../components/common/Header"
 import Footer from "../components/common/Footer"
 import Inner from "../components/layout/Inner"
+import { useNavigate } from "react-router-dom"
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -91,7 +91,12 @@ const FeatureDescription = styled.p`
 `
 
 export default function Home() {
-  const headerRight = <Button variant="primary">로그인</Button>
+  const navigate = useNavigate()
+
+  const handleClick = () => {
+    navigate("/login")
+  }
+  const headerRight = <Button variant="primary" onClick={handleClick}>로그인</Button>
 
   return (
     <PageContainer>
@@ -112,7 +117,7 @@ export default function Home() {
             </HeroDescription>
 
             <ButtonContainer>
-              <Button variant="primary" size="default">
+              <Button variant="primary" size="default" onClick={handleClick}>
                 여행 계획 시작하기
               </Button>
             </ButtonContainer>

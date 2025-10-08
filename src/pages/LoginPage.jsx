@@ -1,10 +1,9 @@
-"use client"
-
 import styled from "styled-components"
 import Button from "../components/common/Button"
 import Header from "../components/common/Header"
 import Footer from "../components/common/Footer"
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 // 배경 그라데이션 및 애니메이션 효과가 있는 메인 컨테이너
 const PageContainer = styled.div`
@@ -138,6 +137,10 @@ const SignupText = styled.p`
 `
 
 export default function Login() {
+  const navigate = useNavigate()
+  const handleLoginClick = () => {
+    navigate("/travel-rooms")
+  }
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
@@ -176,7 +179,7 @@ export default function Login() {
             </InputWrapper>
 
             <ButtonWrapper>
-              <Button type="submit" variant="primary" size="full">
+              <Button type="submit" variant="primary" size="full" onClick={handleLoginClick}>
                 로그인
               </Button>
             </ButtonWrapper>

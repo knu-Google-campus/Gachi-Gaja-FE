@@ -6,8 +6,7 @@ const CardWrapper = styled.div`
     background-color: #ffffff;
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;
 
 // 레이아웃 내부 소제목

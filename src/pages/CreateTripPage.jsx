@@ -160,7 +160,7 @@ export default function CreateTripPage() {
 
       <ContentWrapper>
         <Title>새로운 여행 만들기</Title>
-        <Subtitle>다음 모험을 시작해보세요.</Subtitle>
+        <Subtitle>다음 여행을 시작해보세요.</Subtitle>
 
         <FormCard>
           <form onSubmit={handleSubmit}>

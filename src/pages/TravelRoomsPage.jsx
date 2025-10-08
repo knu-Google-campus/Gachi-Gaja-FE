@@ -29,6 +29,40 @@ const PageSubtitle = styled.p`
   margin: 0 0 48px 0;
 `
 
+const TitleSection = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 48px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+`
+
+const TitleContent = styled.div`
+  display: flex;
+  flex-direction: column;
+`
+
+const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    
+    button {
+      flex: 1;
+      font-size: 0.9rem;
+      padding: 10px 16px;
+    }
+  }
+`
+
 const Section = styled.section`
   margin-bottom: 48px;
 `
@@ -61,16 +95,9 @@ const TravelRoomsPage = () => {
   const navigate = useNavigate();
   const { setRightContent } = useHeaderConfig();
   
-  const HeaderRightContent = (
-    <>
-      <Button variant="secondary">방 참가하기</Button>
-      <Button variant="primary" onClick={() => navigate("/create-trip")}>방 생성하기</Button>
-      <ProfileImage alt="User Profile" size={32} />
-    </>
-  );
-  
   useEffect(() => {
-    setRightContent(HeaderRightContent);
+    // 헤더에서 프로필 이미지만 표시
+    setRightContent(<ProfileImage alt="User Profile" size={32} />);
   }, [setRightContent]);
   const activeTrips = [
     {
@@ -105,8 +132,16 @@ const TravelRoomsPage = () => {
     <PageWrapper>
       <MainContent>
         <Inner>
-          <PageTitle>여행 목록 방</PageTitle>
-          <PageSubtitle>당신의 다음 여정이 시작되는 곳</PageSubtitle>
+          <TitleSection>
+            <TitleContent>
+              <PageTitle>여행 목록 방</PageTitle>
+              <PageSubtitle>당신의 다음 여정이 시작되는 곳</PageSubtitle>
+            </TitleContent>
+            <ButtonGroup>
+              <Button variant="secondary">방 참가하기</Button>
+              <Button variant="primary" onClick={() => navigate("/create-trip")}>방 생성하기</Button>
+            </ButtonGroup>
+          </TitleSection>
 
           <Section>
             <SectionTitle>계획된 여행</SectionTitle>

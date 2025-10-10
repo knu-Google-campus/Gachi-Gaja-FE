@@ -20,6 +20,7 @@ const AppRouter = () => {
           <Route path="/travel-rooms" element={<TravelRoomsPage />} />
           <Route path="/create-trip" element={<CreateTripPage />} />
           <Route path="/trip-room/:id" element={<TripRoomPage />} />
+          <Route path="/prompt" element={<PromptPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

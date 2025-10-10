@@ -6,6 +6,7 @@ import MainLayout from "../components/layout/MainLayout";
 import TravelRoomsPage from "../pages/TravelRoomsPage";
 import CreateTripPage from "../pages/CreateTripPage";
 import TripRoomPage from "../pages/TripRoomPage";
+import PromptPage from "../pages/PromptPage";
 
 const AppRouter = () => {
   return (

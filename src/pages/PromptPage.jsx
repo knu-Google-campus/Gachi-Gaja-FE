@@ -121,7 +121,7 @@ const travelIcons = {
   "Nightlife" : <FaGlassMartiniAlt />, "Foodie" : <FaUtensils />,
  }
 
-export default function Prompt () {
+export default function PromptPage () {
   const [promptText, setPromptText] = useState("")
   
   const { setRightContent } = useHeaderConfig();

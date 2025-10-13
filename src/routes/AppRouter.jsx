@@ -6,6 +6,7 @@ import MainLayout from "../components/layout/MainLayout";
 import TravelRoomsPage from "../pages/TravelRoomsPage";
 import CreateTripPage from "../pages/CreateTripPage";
 import TripRoomPage from "../pages/TripRoomPage";
+import PromptPage from "../pages/PromptPage";
 
 const AppRouter = () => {
   return (
@@ -20,6 +21,7 @@ const AppRouter = () => {
           <Route path="/travel-rooms" element={<TravelRoomsPage />} />
           <Route path="/create-trip" element={<CreateTripPage />} />
           <Route path="/trip-room/:id" element={<TripRoomPage />} />
+          <Route path="/prompt" element={<PromptPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

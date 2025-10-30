@@ -7,6 +7,7 @@ import ItineraryItem from "../components/general/ItineraryItem"
 import LoadingAnimation from "../components/general/LoadingAnimation"
 import { FaSync, FaThumbsUp, FaInfoCircle } from "react-icons/fa"
 import Inner from "../components/layout/Inner"
+import { useNavigate } from "react-router-dom"
 
 const PageWrapper = styled.div`
   min-height: 100vh;
@@ -134,6 +135,7 @@ export default function VotePage({ params }) {
   const [loading, setLoading] = useState(true)
   const [activeChoice, setActiveChoice] = useState(1)
   const [votedChoice, setVotedChoice] = useState(null) // null, 1, 또는 2
+  const navigate = useNavigate()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -161,7 +163,7 @@ export default function VotePage({ params }) {
   }
 
   const handleConfirm = () => {
-    alert("최종 계획이 확정되었습니다!")
+    navigate(`/trip-plan/1`)
   }
 
   const itineraries = {

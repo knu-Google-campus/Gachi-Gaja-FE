@@ -8,6 +8,7 @@ import CreateTripPage from "../pages/CreateTripPage";
 import TripRoomPage from "../pages/TripRoomPage";
 import PromptPage from "../pages/PromptPage";
 import VotePage from "../pages/VotePage";
+import TripPlanPage from "../pages/tripPage";
 
 const AppRouter = () => {
   return (
@@ -24,6 +25,7 @@ const AppRouter = () => {
           <Route path="/trip-room/:id" element={<TripRoomPage />} />
           <Route path="/prompt" element={<PromptPage />} />
           <Route path="/vote/:id" element={<VotePage />} />
+          <Route path="/trip-plan/:id" element={<TripPlanPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

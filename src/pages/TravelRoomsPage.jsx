@@ -138,7 +138,7 @@ const TravelRoomsPage = () => {
               <PageSubtitle>당신의 다음 여정이 시작되는 곳</PageSubtitle>
             </TitleContent>
             <ButtonGroup>
-              <Button variant="secondary">방 참가하기</Button>
+              <Button variant="secondary" onClick={() => navigate("/join-room")}>방 참가하기</Button>
               <Button variant="primary" onClick={() => navigate("/create-trip")}>방 생성하기</Button>
             </ButtonGroup>
           </TitleSection>

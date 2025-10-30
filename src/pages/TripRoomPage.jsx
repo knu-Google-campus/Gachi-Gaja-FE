@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useState} from "react"
 import styled from "styled-components"
 import Button from "../components/common/Button"
 import ProfileImage from "../components/common/ProfileImage"
 import Card from "../components/layout/Card"
 import { FaEdit, FaUserPlus, FaList, FaPencilAlt, FaMagic } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -201,7 +202,7 @@ export default function TripRoomPage() {
   ])
 
   const inviteLink = "https://voyage.ai/invite/aBcDeFg"
-
+  const navigate = useNavigate()
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink)
     alert("초대 링크가 복사되었습니다!")
@@ -213,7 +214,7 @@ export default function TripRoomPage() {
   }
 
   const handleGenerateTrip = () => {
-    alert("여행이 생성되었습니다!")
+    navigate("/vote/1")
   }
 
   const handleGoToRooms = () => {

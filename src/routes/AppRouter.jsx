@@ -8,7 +8,7 @@ import CreateTripPage from "../pages/CreateTripPage";
 import TripRoomPage from "../pages/TripRoomPage";
 import PromptPage from "../pages/PromptPage";
 import VotePage from "../pages/VotePage";
-import TripPlanPage from "../pages/tripPage";
+import TripPlanPage from "../pages/TripPageFinal";
 
 const AppRouter = () => {
   return (

@@ -1,5 +1,3 @@
-"use client"
-
 import styled from "styled-components"
 import { FaUser } from "react-icons/fa"
 
@@ -12,7 +10,7 @@ const ProfileImageWrapper = styled.div`
   align-items: center;
   justify-content: center;
   background-color: #f3f4f6;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   cursor: pointer;
   transition: all 0.2s ease;
 

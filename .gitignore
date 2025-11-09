@@ -1,27 +1,42 @@
-# Logs
-logs
-*.log
+# 패키지 의존성
+node_modules/
+
+# 빌드 산출물 (Vite 기본 dist)
+dist/
+
+# 임시/디버그 로그
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# 환경 변수 파일 (여러 변형 포함)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# 에디터 / OS 잡파일
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+*.swp
+*.swo
 
-*storybook.log
-storybook-static
+# IDE 설정 (필요시 세분화 가능; 현재는 전부 제외)
+.idea/
+# .vscode/  # 팀 설정 공유가 필요하면 주석 처리하고 특정 파일만 허용
+
+# 테스트 커버리지 (추후 테스트 도입 시)
+coverage/
+
+# 잠재적 캐시
+.eslintcache
+
+# 배포 서비스 관련(미사용: vercel)
+.vercel
+
+# 잠금 파일(현재 npm 사용; 다른 매니저 Lock은 커밋 방지)
+yarn.lock
+pnpm-lock.yaml

@@ -1,1 +1,1 @@
-AI 기반 단체 여행 서비스 FE
+## gachigaja

@@ -1,156 +1,132 @@
-import styled from "styled-components"
-import Button from "../components/common/Button"
-import Header from "../components/common/Header"
-import Footer from "../components/common/Footer"
-import Inner from "../components/layout/Inner"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plane } from "lucide-react"
 
-const PageContainer = styled.div`
-  min-height: 100vh;
-  background-color: #ffffff;
-  display: flex;
-  flex-direction: column;
-`
-
-const MainContent = styled.main`
-  padding-top: 64px;
-  flex: 1;
-`
-
-const HeroSection = styled.div`
-  text-align: center;
-  padding: 80px 0;
-`
-
-const HeroTitle = styled.h1`
-  font-size: 3rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 24px;
-  text-wrap: balance;
-  
-  @media (max-width: 768px) {
-    font-size: 2.5rem;
-  }
-`
-
-const PrimaryText = styled.span`
-  color: #334155;
-`
-
-const HeroDescription = styled.p`
-  font-size: 1.25rem;
-  color: #6b7280;
-  margin-bottom: 32px;
-  max-width: 672px;
-  margin-left: auto;
-  margin-right: auto;
-  text-wrap: pretty;
-`
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-`
-
-const FeaturesSection = styled.section`
-  padding: 64px 0;
-  background-color: rgba(248, 250, 252, 0.3);
-`
-
-const FeaturesGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 32px;
-  text-align: center;
-  
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-`
-
-const FeatureCard = styled.div`
-  padding: 24px;
-`
-
-const FeatureIcon = styled.div`
-  font-size: 2.25rem;
-  margin-bottom: 16px;
-`
-
-const FeatureTitle = styled.h3`
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: #1f2937;
-`
-
-const FeatureDescription = styled.p`
-  color: #6b7280;
-  margin: 0;
-`
-
-export default function Home() {
+export default function LandingPage() {
+  const [isLogin, setIsLogin] = useState(true)
   const navigate = useNavigate()
 
-  const handleClick = () => {
-    navigate("/login")
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    navigate("/rooms")
   }
-  const headerRight = <Button variant="primary" onClick={handleClick}>로그인</Button>
 
   return (
-    <PageContainer>
-      <Header right={headerRight} />
+    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute transform"
+          style={{
+            top: "40%",
+            left: "-100px",
+            animation: "flyAcross 30s linear infinite",
+          }}
+        >
+          <img
+            src="/images/design-mode/7893979.png"
+            alt="airplane"
+            style={{
+              width: "100px",
+              height: "100px",
+              opacity: 0.25,
+            }}
+          />
+        </div>
+      </div>
 
-      <MainContent>
-        <Inner>
-          <HeroSection>
-            <HeroTitle>
-              모두의 의견을 모아
-              <br />
-              <PrimaryText>완벽한 단체 여행</PrimaryText>을 계획하세요
-            </HeroTitle>
+      {/* Header */}
+      <header className="border-b border-border relative z-10">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Plane className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold text-foreground">같이가자</span>
+          </div>
+        </div>
+      </header>
 
-            <HeroDescription>
-              친구들, 가족, 동료들의 다양한 의견을 AI가 똑똑하게 분석하여 모두가 만족하는 최적의 여행 계획을
-              제안해드립니다.
-            </HeroDescription>
+      {/* Hero Section */}
+      <main className="container mx-auto px-4 py-16 md:py-24 flex-1 relative z-10">
+        <div className="grid md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+          {/* Left Side - Hero Content */}
+          <div className="space-y-8 text-center md:text-left" style={{ animation: "fadeInLeft 0.8s ease-out" }}>
+            <div className="space-y-4">
+              <h1 className="text-5xl md:text-6xl font-bold text-foreground leading-tight text-balance">
+                함께 만드는
+                <br />
+                우리의 여행
+              </h1>
+              <p className="text-xl text-muted-foreground">모두의 의견을 한 곳에</p>
+            </div>
 
-            <ButtonContainer>
-              <Button variant="primary" size="default" onClick={handleClick}>
-                여행 계획 시작하기
-              </Button>
-            </ButtonContainer>
-          </HeroSection>
-        </Inner>
+            <div className="space-y-3 text-muted-foreground max-w-md mx-auto md:mx-0">
+              <p>✓ 의견 수집부터 일정 생성까지 자동화</p>
+              <p>✓ 투표로 결정하는 민주적인 여행</p>
+              <p>✓ 모든 정보를 한눈에 관리</p>
+            </div>
+          </div>
 
-        <FeaturesSection>
-          <Inner>
-            <FeaturesGrid>
-              <FeatureCard>
-                <FeatureIcon>🗳️</FeatureIcon>
-                <FeatureTitle>의견 수집</FeatureTitle>
-                <FeatureDescription>모든 참가자의 의견을 간편하게 수집합니다</FeatureDescription>
-              </FeatureCard>
+          {/* Right Side - Login/Signup Form */}
+          <Card
+            className="w-full max-w-md mx-auto shadow-lg"
+            style={{ animation: "fadeInRight 0.8s ease-out 0.2s backwards" }}
+          >
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-2xl">{isLogin ? "로그인" : "회원가입"}</CardTitle>
+              <CardDescription className="text-base">
+                {isLogin ? "여행을 시작하세요" : "새로운 여행을 시작하세요"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={handleSubmit}>
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">이름</Label>
+                    <Input id="name" placeholder="홍길동" className="h-11" />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="email">이메일</Label>
+                  <Input id="email" type="email" placeholder="example@email.com" className="h-11" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">비밀번호</Label>
+                  <Input id="password" type="password" placeholder="••••••••" className="h-11" />
+                </div>
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">비밀번호 확인</Label>
+                    <Input id="confirm-password" type="password" placeholder="••••••••" className="h-11" />
+                  </div>
+                )}
+                <Button type="submit" className="w-full h-11 text-base">
+                  {isLogin ? "로그인" : "회원가입"}
+                </Button>
+              </form>
 
-              <FeatureCard>
-                <FeatureIcon>🤖</FeatureIcon>
-                <FeatureTitle>AI 분석</FeatureTitle>
-                <FeatureDescription>수집된 의견을 AI가 분석하여 최적의 여행 계획을 생성합니다</FeatureDescription>
-              </FeatureCard>
+              <div className="mt-6 text-center text-sm">
+                <button onClick={() => setIsLogin(!isLogin)} className="text-primary hover:underline cursor-pointer">
+                  {isLogin ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인"}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
 
-              <FeatureCard>
-                <FeatureIcon>✈️</FeatureIcon>
-                <FeatureTitle>완벽한 계획</FeatureTitle>
-                <FeatureDescription>모두가 만족하는 맞춤형 여행 일정을 받아보세요</FeatureDescription>
-              </FeatureCard>
-            </FeaturesGrid>
-          </Inner>
-        </FeaturesSection>
-      </MainContent>
-
-      <Footer />
-    </PageContainer>
+      <footer
+        className="border-t border-border mt-auto relative z-10"
+        style={{ animation: "fadeInUp 0.8s ease-out 0.4s backwards" }}
+      >
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center">
+            <p className="text-sm text-muted-foreground">© 2025 같이가자. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
   )
 }
-

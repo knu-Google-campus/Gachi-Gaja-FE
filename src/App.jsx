@@ -1,20 +1,12 @@
-import GlobalStyle from './styles/GlobalStyle';
-import './App.css'
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import AppRouter from './routes/AppRouter';
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from "@vercel/analytics/react";
+import AppRoutes from "./router/router.jsx"
+import { ToastContainer } from "react-toastify";
 
-function App() {
-
+export default function App() {
   return (
     <>
-      <GlobalStyle />
-      <Analytics />
-      <AppRouter />
-      <ToastContainer />
+    <AppRoutes />
+    <Analytics />
     </>
   )
 }
-
-export default App

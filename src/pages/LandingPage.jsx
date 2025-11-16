@@ -15,7 +15,7 @@ export default function LandingPage() {
   const [name, setName] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       if (isLogin) {
@@ -116,21 +116,21 @@ export default function LandingPage() {
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="name">이름</Label>
-                    <Input id="name" placeholder="홍길동" className="h-11" />
+                    <Input id="name" placeholder="홍길동" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="email">이메일</Label>
-                  <Input id="email" type="email" placeholder="example@email.com" className="h-11" />
+                  <Input id="email" type="email" placeholder="example@email.com" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">비밀번호</Label>
-                  <Input id="password" type="password" placeholder="••••••••" className="h-11" />
+                  <Input id="password" type="password" placeholder="••••••••" className="h-11" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">비밀번호 확인</Label>
-                    <Input id="confirm-password" type="password" placeholder="••••••••" className="h-11" />
+                    <Input id="confirm-password" type="password" placeholder="••••••••" className="h-11" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   </div>
                 )}
                 <Button type="submit" className="w-full h-11 text-base">

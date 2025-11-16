@@ -24,6 +24,17 @@ export default function CreateRoomPage() {
     deadline: "",
   })
 
+  // n박 m일로 날짜를 변환하는 함수
+  const calculatePeriod = (startDate, endDate) => {
+    if (!startDate || !endDate) return "";
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return `${diffDays}박 ${diffTime + 1}일`;
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     // 임시로 랜덤 ID 생성 (실제로는 API 응답 사용)

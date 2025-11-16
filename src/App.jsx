@@ -7,6 +7,7 @@ export default function App() {
     <>
     <AppRoutes />
     <Analytics />
+    <ToastContainer />
     </>
   )
 }

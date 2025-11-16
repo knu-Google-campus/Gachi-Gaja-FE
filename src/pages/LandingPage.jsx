@@ -37,6 +37,8 @@ export default function LandingPage() {
         alert("회원가입이 완료되었습니다.")
 
         setIsLogin(true)
+        setEmail("")
+        setName("")
         setPassword("")
         setConfirmPassword("")
       }

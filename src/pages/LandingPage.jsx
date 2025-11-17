@@ -5,14 +5,47 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plane } from "lucide-react"
+import { loginUser, registerUser } from "@/api/auth"
 
 export default function LandingPage() {
   const [isLogin, setIsLogin] = useState(true)
   const navigate = useNavigate()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    navigate("/rooms")
+    try {
+      if (isLogin) {
+        const data = await loginUser({ email, password })
+        localStorage.setItem("userId", data.userId);
+        navigate("/rooms")
+      } else{
+        // 비밀번호 검증
+        if (password !== confirmPassword) {
+          alert("비밀번호가 일치하지 않습니다.")
+          return
+        }
+
+        const data = await registerUser({
+          email,
+          password,
+          nickname: name
+        })
+        alert("회원가입이 완료되었습니다.")
+
+        setIsLogin(true)
+        setEmail("")
+        setName("")
+        setPassword("")
+        setConfirmPassword("")
+      }
+    } catch (error) {
+      console.error("에러 : ", error)
+      alert(error.response?.data?.message || "작업 중 오류가 발생했습니다.")
+    }
   }
 
   return (
@@ -85,21 +118,21 @@ export default function LandingPage() {
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="name">이름</Label>
-                    <Input id="name" placeholder="홍길동" className="h-11" />
+                    <Input id="name" placeholder="홍길동" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="email">이메일</Label>
-                  <Input id="email" type="email" placeholder="example@email.com" className="h-11" />
+                  <Input id="email" type="email" placeholder="example@email.com" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">비밀번호</Label>
-                  <Input id="password" type="password" placeholder="••••••••" className="h-11" />
+                  <Input id="password" type="password" placeholder="••••••••" className="h-11" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">비밀번호 확인</Label>
-                    <Input id="confirm-password" type="password" placeholder="••••••••" className="h-11" />
+                    <Input id="confirm-password" type="password" placeholder="••••••••" className="h-11" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   </div>
                 )}
                 <Button type="submit" className="w-full h-11 text-base">

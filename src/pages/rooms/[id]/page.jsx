@@ -1,6 +1,6 @@
 
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,30 +25,32 @@ export default function RoomDetailPage() {
   const navigate = useNavigate()
   const { id: roomId } = useParams()
 
-  const [room, setRoom] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
+  const [room, setRoom] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [opinions, setOpinions] = useState([])
+  
   const [opinion, setOpinion] = useState("")
   const [selectedKeywords, setSelectedKeywords] = useState([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const inviteLink = `https://gachigaja.com/invite/${roomId}`
-  const today = new Date()
-  const deadline = new Date(room.opinionDeadline)
-  const daysRemaining = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
+  // 현재 로그인한 유저 ID
+  const currentUserId = localStorage.getItem("userId")
 
-  const keywords = ["휴식", "활동적", "자연", "관광지", "맛집", "쇼핑", "문화체험", "사진", "모험", "스포츠"]
-
+  // 방 정보 가져오기
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const data = await getGroupInfo(roomId);
         setRoom(data);
+        setOpinions([]);
         console.log("방 정보 로딩 완료 : ", data); // 디버깅용 코드
+
       } catch (error) {
         console.error("방 정보 로딩 실패 : ", error);
         alert("존재하지 않는 방이거나 오류가 발생했습니다.");
+        navigate("/rooms")
+
       } finally {
         setIsLoading(false);
       }
@@ -59,6 +61,30 @@ export default function RoomDetailPage() {
     }
   }, [roomId, navigate]);
 
+  const toggleKeyword = (keyword) => {
+    setSelectedKeywords((prev) => (prev.includes(keyword) ? prev.filter((k) => k !== keyword) : [...prev, keyword]))
+  }
+
+  const handleSaveOpinion = () => {
+    setIsDialogOpen(false)
+  }
+
+  const inviteLink = `https://gachigaja.com/invite/${roomId}`
+
+  const copyInviteLink = () => {
+    const currentUrl = `https://gachigaja.com/invite/${roomId}`
+    navigator.clipboard.writeText(currentUrl)
+    alert("링크가 복사되었습니다!")
+  }
+
+  const handleGenerateTrip = () => {
+    if (room?.leaderID !== currentUserId) {
+      alert("방장만 여행을 생성할 수 있습니다.")
+      return
+    }
+    navigate(`/rooms/${roomId}/plans?generating=true`)
+  }
+
   // 페이지 로딩중일때 보여줄 화면
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -66,21 +92,11 @@ export default function RoomDetailPage() {
     </div>
   );
 
-  const toggleKeyword = (keyword) => {
-    setSelectedKeywords((prev) => (prev.includes(keyword) ? prev.filter((k) => k !== keyword) : [...prev, keyword]))
-  }
+  const today = new Date()
+  const deadline = new Date(room.rDeadline)
+  const daysRemaining = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
 
-  const copyInviteLink = () => {
-    navigator.clipboard.writeText(inviteLink)
-  }
-
-  const handleSaveOpinion = () => {
-    setIsDialogOpen(false)
-  }
-
-  const handleGenerateTrip = () => {
-    navigate(`/rooms/${roomId}/plans?generating=true`)
-  }
+  const keywords = ["휴식", "활동적", "자연", "관광지", "맛집", "쇼핑", "문화체험", "사진", "모험", "스포츠"]
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,7 +106,7 @@ export default function RoomDetailPage() {
         <div className="max-w-4xl mx-auto">
           {/* Title and Edit Button */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
-            <h1 className="text-3xl font-bold text-foreground">{room.name}</h1>
+            <h1 className="text-3xl font-bold text-foreground">{room.title}</h1>
             <Button
               variant="outline"
               size="sm"
@@ -113,7 +129,7 @@ export default function RoomDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {room.members.map((member) => {
+                  {(room.members || []).map((member) => {
                     const memberOpinion = opinions.find((o) => o.userId === member.id)
                     const isCurrentUser = member.id === currentUserId
                     const isHost = member.id === room.hostId // Check if member is host
@@ -242,12 +258,12 @@ export default function RoomDetailPage() {
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">목적지</span>
-                    <span className="font-medium text-foreground">{room.destination}</span>
+                    <span className="font-medium text-foreground">{room.region}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">일정</span>
                     <span className="font-medium text-foreground">
-                      {room.startDate} - {room.endDate}
+                      {room.period}
                     </span>
                   </div>
                   <div className="flex justify-between">

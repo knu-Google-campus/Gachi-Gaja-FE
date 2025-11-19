@@ -50,7 +50,6 @@ export default function RoomDetailPage() {
           members: membersResponse.Members
         })
         setOpinions([]);
-        console.log("데이터 로딩 완료 : ", data); // 디버깅용 코드
 
       } catch (error) {
         console.error("데이터 로딩 실패 : ", error);
@@ -116,15 +115,17 @@ export default function RoomDetailPage() {
           {/* Title and Edit Button */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
             <h1 className="text-3xl font-bold text-foreground">{room.title}</h1>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/rooms/${roomId}/edit`)}
-              className="w-full sm:w-auto"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              여행 정보 수정
-            </Button>
+            {isLeader && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/rooms/${roomId}/edit`)}
+                className="w-full sm:w-auto"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                여행 정보 수정
+              </Button>
+            )}           
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
@@ -139,18 +140,18 @@ export default function RoomDetailPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(room.members || []).map((member) => {
-                    const memberOpinion = opinions.find((o) => o.userId === member.id)
-                    const isCurrentUser = member.id === currentUserId
-                    const isHost = member.id === room.hostId // Check if member is host
+                    const memberOpinion = opinions.find((o) => o.userId === member.userId)
+                    const isCurrentUser = member.userId === currentUserId
+                    const isHost = member.role === 'LEADER'
 
                     return (
-                      <div key={member.id} className="border border-border rounded-lg p-4">
+                      <div key={member.userId} className="border border-border rounded-lg p-4">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                              {member.name[0]}
+                              {member.nickname[0]}
                             </div>
-                            <span className="font-semibold text-foreground">{member.name}</span>
+                            <span className="font-semibold text-foreground">{member.nickname}</span>
                             {isHost && (
                               <Badge variant="secondary" className="text-xs">
                                 <Crown className="h-3 w-3 mr-1" />
@@ -277,7 +278,7 @@ export default function RoomDetailPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">인원</span>
-                    <span className="font-medium text-foreground">{room.memberCount}명</span>
+                    <span className="font-medium text-foreground">{room.members?.length || 0}명</span>
                   </div>
                 </CardContent>
               </Card>

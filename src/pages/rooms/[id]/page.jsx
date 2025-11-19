@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Header } from "@/components/header"
 import { Copy, Settings, Calendar, Users, Edit, Crown } from "lucide-react" // Added Crown icon
 import { mockRooms, mockOpinions, currentUserId } from "@/lib/mock-data" // Added currentUserId import
-import { getGroupInfo } from "@/api/group"
+import { getGroupInfo, getGroupMembers } from "@/api/group"
 
 export default function RoomDetailPage() {
   const navigate = useNavigate()
@@ -41,13 +41,19 @@ export default function RoomDetailPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const data = await getGroupInfo(roomId);
-        setRoom(data);
+        const [roomData, membersResponse] = await Promise.all([
+          getGroupInfo(roomId),
+          getGroupMembers(roomId)
+        ])
+        setRoom({
+          ...roomData,
+          members: membersResponse.Members
+        })
         setOpinions([]);
-        console.log("방 정보 로딩 완료 : ", data); // 디버깅용 코드
+        console.log("데이터 로딩 완료 : ", data); // 디버깅용 코드
 
       } catch (error) {
-        console.error("방 정보 로딩 실패 : ", error);
+        console.error("데이터 로딩 실패 : ", error);
         alert("존재하지 않는 방이거나 오류가 발생했습니다.");
         navigate("/rooms")
 
@@ -78,7 +84,8 @@ export default function RoomDetailPage() {
   }
 
   const handleGenerateTrip = () => {
-    if (room?.leaderID !== currentUserId) {
+    const myInfo = room?.members?.find(m => m.userId === currentUserId)
+    if (myInfo?.role !== 'LEADER') {
       alert("방장만 여행을 생성할 수 있습니다.")
       return
     }
@@ -97,6 +104,8 @@ export default function RoomDetailPage() {
   const daysRemaining = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
 
   const keywords = ["휴식", "활동적", "자연", "관광지", "맛집", "쇼핑", "문화체험", "사진", "모험", "스포츠"]
+
+  const isLeader = room.members?.find(m => m.userId === currentUserId)?.role === 'LEADER'
 
   return (
     <div className="min-h-screen bg-background">

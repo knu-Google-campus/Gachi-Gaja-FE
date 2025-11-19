@@ -19,13 +19,14 @@ import { Badge } from "@/components/ui/badge"
 import { Header } from "@/components/header"
 import { Copy, Settings, Calendar, Users, Edit, Crown } from "lucide-react" // Added Crown icon
 import { mockRooms, mockOpinions, currentUserId } from "@/lib/mock-data" // Added currentUserId import
+import { getGroupInfo } from "@/api/group"
 
 export default function RoomDetailPage() {
   const navigate = useNavigate()
   const { id: roomId } = useParams()
 
-  const room = mockRooms.find((r) => r.id === roomId) || mockRooms[0]
-  const opinions = mockOpinions[roomId] || []
+  const [room, setRoom] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [opinion, setOpinion] = useState("")
   const [selectedKeywords, setSelectedKeywords] = useState([])
@@ -37,6 +38,33 @@ export default function RoomDetailPage() {
   const daysRemaining = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
 
   const keywords = ["휴식", "활동적", "자연", "관광지", "맛집", "쇼핑", "문화체험", "사진", "모험", "스포츠"]
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getGroupInfo(roomId);
+        setRoom(data);
+        console.log("방 정보 로딩 완료 : ", data); // 디버깅용 코드
+      } catch (error) {
+        console.error("방 정보 로딩 실패 : ", error);
+        alert("존재하지 않는 방이거나 오류가 발생했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (roomId) {
+      fetchData();
+    }
+  }, [roomId, navigate]);
+
+  // 페이지 로딩중일때 보여줄 화면
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p>여행 정보를 불러오는 중...</p>
+    </div>
+  );
 
   const toggleKeyword = (keyword) => {
     setSelectedKeywords((prev) => (prev.includes(keyword) ? prev.filter((k) => k !== keyword) : [...prev, keyword]))

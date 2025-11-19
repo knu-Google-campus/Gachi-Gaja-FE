@@ -197,6 +197,28 @@ export const handlers = [
     })
   }),
 
+  // 모임 멤버 조회 (GET /api/groups/:groupId/members)
+  http.get('/api/groups/:groupId/members', ({ params }) => {
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    
+    if (!group) return HttpResponse.json({ message: '없음' }, { status: 404 })
+
+    const Members = group.members.map((memberId, index) => {
+      const user = users.find(u => u.userId === memberId)
+      if (!user) return null
+      
+      return {
+        memberId: String(index + 1),
+        userId: user.userId,
+        nickname: user.nickname,
+        role: group.leaderId === user.userId ? 'LEADER' : 'MEMBER' 
+      }
+    }).filter(Boolean)
+
+    return HttpResponse.json({ Members }) 
+  }),
+
   // 모임 삭제 (DELETE /api/groups/:groupId?userId=...)
   http.delete('/api/groups/:groupId', ({ params, request }) => {
     const url = new URL(request.url)

@@ -7,7 +7,7 @@ let users = [
   { userId: '1', email: 'alice@example.com', password: 'P@ssw0rd!', nickname: '앨리스' },
 ]
 
-let groups = []
+let groups = [] // each group: { groupId, leaderId, title, ..., members:[{memberId,userId,nickname,role}], plans:[], candidates:{callCnt, list:[]}, requirements:[] }
 
 // Simple helpers
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -145,7 +145,10 @@ export const handlers = [
         budget,
         rDeadline,
         pDeadline: null,
-        members: [leader.userId]
+        members: [{ memberId: generateId('m'), userId: leader.userId, nickname: leader.nickname, role: 'LEADER' }],
+        plans: [],
+        candidates: { callCnt: 0, list: [] },
+        requirements: []
       })
       return HttpResponse.json({ groupId, message: '그룹 생성 완료' })
     } catch (e) {
@@ -161,7 +164,7 @@ export const handlers = [
     if (!user) {
       return HttpResponse.json({ message: '해당 사용자 없음' }, { status: 404 })
     }
-    const memberGroups = groups.filter(g => g.members.includes(userId))
+    const memberGroups = groups.filter(g => g.members.some(m => m.userId === userId))
     if (memberGroups.length === 0) {
       return HttpResponse.json({ exists: false, groupList: [] })
     }
@@ -239,6 +242,228 @@ export const handlers = [
     } catch (e) {
       return HttpResponse.json({ message: '서버 오류' }, { status: 500 })
     }
+  }),
+
+  // ===== Members =====
+  // GET members of group
+  http.get('/api/groups/:groupId/members', ({ params }) => {
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: '해당 groupId 없음' }, { status: 404 })
+    return HttpResponse.json({ Members: group.members.map(m => ({ memberId: m.memberId, userId: m.userId, nickname: m.nickname, role: m.role })) })
+  }),
+  // Add member (idempotent)
+  http.post('/api/groups/:groupId/members', ({ params, request }) => {
+    const url = new URL(request.url)
+    const userId = url.searchParams.get('userId')
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: '존재하지 않는 groupId' }, { status: 404 })
+    const user = findUser(userId)
+    if (!user) return HttpResponse.json({ message: '존재하지 않는 userId' }, { status: 404 })
+    if (!group.members.some(m => m.userId === userId)) {
+      group.members.push({ memberId: generateId('m'), userId, nickname: user.nickname, role: 'MEMBER' })
+    }
+    return HttpResponse.json({ message: '유저가 그룹에 성공적으로 추가되었습니다.' })
+  }),
+
+  // ===== Invites (accept) =====
+  http.post('/api/invites/:groupId', ({ params, request }) => {
+    const url = new URL(request.url)
+    const userId = url.searchParams.get('userId')
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: '해당 groupId 없음' }, { status: 404 })
+    const user = findUser(userId)
+    if (!user) return HttpResponse.json({ message: '존재하지 않는 userId' }, { status: 404 })
+    if (!group.members.some(m => m.userId === userId)) {
+      group.members.push({ memberId: generateId('m'), userId, nickname: user.nickname, role: 'MEMBER' })
+    }
+    return HttpResponse.json({ message: '초대 수락 완료' })
+  }),
+
+  // ===== Plans =====
+  // Create plan (POST /api/groups/:groupId/plans)
+  http.post('/api/groups/:groupId/plans', async ({ params }) => {
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    return HttpResponse.json({ message: '여행 계획 생성(모킹: 내용 없음)' })
+  }),
+  // GET all plans
+  http.get('/api/groups/:groupId/plans', ({ params }) => {
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    // isLeader flag
+    return HttpResponse.json({ isLeader: true, plans: group.plans })
+  }),
+  // POST new individual plan (/new-plans)
+  http.post('/api/groups/:groupId/new-plans', async ({ params, request }) => {
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    try {
+      const body = await request.json()
+      const { starting_time, ending_time, location, transportation, cost } = body
+      if (!starting_time || !ending_time || !location || !transportation || typeof cost !== 'number' || cost <= 0) {
+        return HttpResponse.json({ message: '필수 값 누락 또는 cost 형식 오류' }, { status: 400 })
+      }
+      const plan = { plan_id: generateId('p'), ...body }
+      group.plans.push(plan)
+      return HttpResponse.json({ message: '여행 계획 수정이 완료되었습니다.' })
+    } catch (e) {
+      return HttpResponse.json({ message: '서버 오류' }, { status: 500 })
+    }
+  }),
+  // Update plan
+  http.put('/api/groups/:groupId/plans/:planId', async ({ params, request }) => {
+    const { groupId, planId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    const plan = group.plans.find(p => p.plan_id === planId)
+    if (!plan) return HttpResponse.json({ message: 'planId 없음' }, { status: 404 })
+    try {
+      const body = await request.json()
+      const { starting_time, ending_time, location, transportation, cost } = body
+      if (!starting_time || !ending_time || !location || !transportation || typeof cost !== 'number' || cost <= 0) {
+        return HttpResponse.json({ message: '활동 설명 제외 필수 값 누락 발생 또는 cost 오류' }, { status: 400 })
+      }
+      Object.assign(plan, body)
+      return HttpResponse.json({ message: '여행 계획 수정이 완료되었습니다.' })
+    } catch (e) {
+      return HttpResponse.json({ message: '서버 오류' }, { status: 500 })
+    }
+  }),
+  // Delete plan
+  http.delete('/api/groups/:groupId/plans/:planId', ({ params }) => {
+    const { groupId, planId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    group.plans = group.plans.filter(p => p.plan_id !== planId)
+    return HttpResponse.json({ message: '계획 삭제 완료' })
+  }),
+
+  // ===== Candidates =====
+  http.post('/api/groups/:groupId/candidates', ({ params }) => {
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    if (group.candidates.callCnt >= 3) {
+      return HttpResponse.json({ message: '재생성 3회 초과' }, { status: 400 })
+    }
+    group.candidates.callCnt++
+    // generate dummy candidate
+    const candidatePlanId = generateId('cpl')
+    group.candidates.list.push({ candidatePlanId, content: '더미 후보 일정', votes: 0, votedUsers: [] })
+    return HttpResponse.json({ message: '후보 생성 완료', callCnt: group.candidates.callCnt })
+  }),
+  http.get('/api/groups/:groupId/candidates/:candidateId', ({ params }) => {
+    const { groupId, candidateId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    const found = group.candidates.list.find(c => c.candidatePlanId === candidateId)
+    if (!found) return HttpResponse.json({ message: 'candidateId 없음' }, { status: 404 })
+    return HttpResponse.json({
+      groupId,
+      isLeader: true,
+      callCnt: group.candidates.callCnt,
+      candidatePlans: group.candidates.list.map(c => ({ candidatePlanId: c.candidatePlanId, content: c.content, votes: c.votes, voted: false }))
+    })
+  }),
+  // Vote list summary
+  http.get('/api/groups/:groupId/candidates/votes', ({ params, request }) => {
+    const url = new URL(request.url)
+    const userId = url.searchParams.get('userId')
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    const isLeader = group.leaderId === userId
+    return HttpResponse.json({
+      leaderVoted: group.candidates.list.some(c => c.votedUsers.includes(group.leaderId)),
+      isLeader,
+      deadline: '2025-11-17',
+      candidatePlanList: group.candidates.list.map(c => ({
+        candidatePlanId: c.candidatePlanId,
+        content: c.content,
+        votes: c.votes,
+        voted: c.votedUsers.includes(userId)
+      }))
+    })
+  }),
+  // Vote or update vote
+  http.post('/api/groups/:groupId/candidates/votes', async ({ params, request }) => {
+    const url = new URL(request.url)
+    const userId = url.searchParams.get('userId')
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    try {
+      const { candidatePlanId } = await request.json()
+      const target = group.candidates.list.find(c => c.candidatePlanId === candidatePlanId)
+      if (!target) return HttpResponse.json({ message: 'candidatePlanId 잘못됨' }, { status: 404 })
+      // Remove previous vote
+      group.candidates.list.forEach(c => {
+        const idx = c.votedUsers.indexOf(userId)
+        if (idx !== -1) {
+          c.votedUsers.splice(idx, 1)
+          c.votes = Math.max(0, c.votes - 1)
+        }
+      })
+      // Add new vote
+      if (!target.votedUsers.includes(userId)) {
+        target.votedUsers.push(userId)
+        target.votes += 1
+      }
+      return HttpResponse.json({ message: '투표 수정 완료' })
+    } catch (e) {
+      return HttpResponse.json({ message: '서버 오류' }, { status: 500 })
+    }
+  }),
+
+  // ===== Requirements =====
+  http.post('/api/groups/:groupId/requirements', async ({ params, request }) => {
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    try {
+      const body = await request.json()
+      const requirementId = generateId('r')
+      const member = group.members[0] // simplistic: first member acts as author
+      const req = { requirementId, memberId: member.memberId, userId: member.userId, nickname: member.nickname, ...body }
+      group.requirements.push(req)
+      return HttpResponse.json({ message: '요구사항 생성이 완료되었습니다', requirementId })
+    } catch (e) {
+      return HttpResponse.json({ message: '서버 오류' }, { status: 500 })
+    }
+  }),
+  http.get('/api/groups/:groupId/requirements', ({ params }) => {
+    const { groupId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    const totalMembers = group.members.length
+    return HttpResponse.json({ totalMembers, requirements: group.requirements })
+  }),
+  http.put('/api/groups/:groupId/requirements/:requirementId', async ({ params, request }) => {
+    const { groupId, requirementId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    const req = group.requirements.find(r => r.requirementId === requirementId)
+    if (!req) return HttpResponse.json({ message: 'requirementId 없음' }, { status: 404 })
+    try {
+      const body = await request.json()
+      Object.assign(req, body)
+      return HttpResponse.json({ message: '요구 사항 수정이 완료되었습니다.' })
+    } catch (e) {
+      return HttpResponse.json({ message: '서버 오류' }, { status: 500 })
+    }
+  }),
+  http.delete('/api/groups/:groupId/requirements/:requirementId', ({ params }) => {
+    const { groupId, requirementId } = params
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    group.requirements = group.requirements.filter(r => r.requirementId !== requirementId)
+    return HttpResponse.json({ message: '요구사항 삭제 완료' })
   }),
 ]
 

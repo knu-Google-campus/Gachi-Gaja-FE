@@ -71,7 +71,7 @@ export default function RoomDetailPage() {
   }
 
   const handleSaveOpinion = () => {
-    setIsDialogOpen(false)
+    setIsDialogOpen(false) // 의견 저장 기능 구현 필요
   }
 
   const inviteLink = `https://gachigaja.com/invite/${roomId}`

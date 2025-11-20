@@ -18,3 +18,9 @@ export const getGroupMembers = async (groupId) => {
   const response = await axios.get(`/api/groups/${groupId}/members`);
   return response.data;
 };
+
+// 의견 저장 / 수정 API
+export const saveOpinion = async (groupId, opinionData) => {
+  const response = await axios.post(`/api/groups/${groupId}/requirements`, opinionData);
+  return response.data;
+};

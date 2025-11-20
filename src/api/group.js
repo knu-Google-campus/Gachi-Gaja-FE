@@ -1,26 +1,39 @@
-import axios from "axios";
+import apiClient from './client.js'
 
 // 여행 그룹 생성 API
 export const createGroup = async (groupData) => {
-  const leaderId = localStorage.getItem("userId");
-  const response = await axios.post(`/api/groups?userId=${leaderId}`, groupData);
-  return response.data;
-};
+  const leaderId = localStorage.getItem('userId')
+  const { data } = await apiClient.post(`/groups`, groupData, { params: { userId: leaderId } })
+  return data
+}
 
-// 여행 그룹 정보 조회 API
-export const getGroupInfo = async (groupId) => {
-  const response = await axios.get(`/api/groups/${groupId}`);
-  return response.data;
-};
+export const getMyGroups = async () => {
+  const userId = localStorage.getItem('userId')
+  const { data } = await apiClient.get('/groups', { params: { userId } })
+  return data
+}
 
-// 그룹 멤버 목록 조회 API
+export const getGroupDetail = async (groupId, userId = localStorage.getItem('userId')) => {
+  const { data } = await apiClient.get(`/groups/${groupId}`, { params: { userId } })
+  return data
+}
+
+export const deleteGroup = async (groupId, userId = localStorage.getItem('userId')) => {
+  const { data } = await apiClient.delete(`/groups/${groupId}`, { params: { userId } })
+  return data
+}
+
+export const updateGroup = async (groupId, payload, userId = localStorage.getItem('userId')) => {
+  const { data } = await apiClient.put(`/groups/${groupId}`, payload, { params: { userId } })
+  return data
+}
+
 export const getGroupMembers = async (groupId) => {
-  const response = await axios.get(`/api/groups/${groupId}/members`);
-  return response.data;
-};
+  const { data } = await apiClient.get(`/groups/${groupId}/members`)
+  return data
+}
 
-// 의견 저장 / 수정 API
-export const saveOpinion = async (groupId, opinionData) => {
-  const response = await axios.post(`/api/groups/${groupId}/requirements`, opinionData);
-  return response.data;
-};
+export const addGroupMember = async (groupId, userId) => {
+  const { data } = await apiClient.post(`/groups/${groupId}/members`, null, { params: { userId } })
+  return data
+}

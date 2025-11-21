@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -15,14 +15,33 @@ import {
 import { Label } from "@/components/ui/label"
 import { Header } from "@/components/header"
 import { Plane, Plus, LogIn, Calendar, MapPin, Users, Crown } from "lucide-react" // Added Crown icon
-import { mockRooms, currentUserId } from "@/lib/mock-data" // Added currentUserId import
+import { getMyGroups } from "@/api/group"
+
+const currentUserId = localStorage.getItem('userId')
 
 export default function RoomsPage() {
   const [joinLink, setJoinLink] = useState("")
   const navigate = useNavigate()
 
-  const plannedTrips = mockRooms.filter((room) => room.status === "planned")
-  const completedTrips = mockRooms.filter((room) => room.status === "completed")
+  const [groups, setGroups] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const data = await getMyGroups()
+        if (data.exists) setGroups(data.groupList)
+        else setGroups([])
+      } catch (e) {
+        setError(e.message || '그룹 목록을 불러오지 못했습니다')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
   const handleJoinRoom = () => {
     if (!joinLink) return
@@ -35,20 +54,9 @@ export default function RoomsPage() {
       id = joinLink.match(/(\d+)/)?.[1]
     }
 
-    if (id) {
-      navigate(`/rooms/${id}`)
-      return
-    }
-
-    // 3) /invite/:code 형태일 때는 백엔드가 없으므로 임시 매핑: 첫 번째 방으로 이동
+    if (id) return navigate(`/rooms/${id}`)
     const inviteCode = joinLink.match(/\/invite\/([^\/?#]+)/)?.[1]
-    if (inviteCode) {
-      const fallbackId = plannedTrips?.[0]?.id || completedTrips?.[0]?.id || '1'
-      navigate(`/rooms/${fallbackId}`)
-      return
-    }
-
-    // 4) 유효하지 않은 링크
+    if (inviteCode && groups.length) return navigate(`/rooms/${groups[0].groupId}`)
     window.alert('유효한 초대 링크를 입력해주세요.')
   }
 
@@ -92,31 +100,27 @@ export default function RoomsPage() {
           </Dialog>
         </div>
 
-        {/* Planned Trips */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-foreground mb-6">계획된 여행</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">내 여행 그룹</h2>
+          {loading && <p className="text-sm text-muted-foreground">불러오는 중...</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {!loading && !error && groups.length === 0 && (
+            <p className="text-sm text-muted-foreground">가입된 그룹이 없습니다. 새로 생성하거나 초대 링크로 참여하세요.</p>
+          )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plannedTrips.map((trip) => (
+            {groups.map((g) => (
               <Card
-                key={trip.id}
+                key={g.groupId}
                 className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/rooms/${trip.id}`)}
+                onClick={() => navigate(`/rooms/${g.groupId}`)}
               >
                 <div className="aspect-video bg-muted flex items-center justify-center">
-                  {trip.coverImage ? (
-                    <img
-                      src={trip.coverImage || "/placeholder.svg"}
-                      alt={trip.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Plane className="h-12 w-12 text-muted-foreground" />
-                  )}
+                  <Plane className="h-12 w-12 text-muted-foreground" />
                 </div>
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <h3 className="font-semibold text-lg text-foreground">{trip.name}</h3>
-                    {trip.hostId === currentUserId && (
+                    <h3 className="font-semibold text-lg text-foreground">{g.title}</h3>
+                    {g.role === 'LEADER' && (
                       <Badge variant="secondary" className="text-xs">
                         <Crown className="h-3 w-3 mr-1" />
                         호스트
@@ -126,70 +130,11 @@ export default function RoomsPage() {
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4" />
-                      <span>{trip.destination}</span>
+                      <span>{g.region}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      <span>
-                        {trip.startDate} - {trip.endDate}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>{trip.memberCount}명</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* Completed Trips */}
-        <section>
-          <h2 className="text-2xl font-bold text-foreground mb-6">다녀온 여행</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {completedTrips.map((trip) => (
-              <Card
-                key={trip.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer opacity-80"
-                onClick={() => navigate(`/rooms/${trip.id}/confirmed`)}
-              >
-                <div className="aspect-video bg-muted flex items-center justify-center">
-                  {trip.coverImage ? (
-                    <img
-                      src={trip.coverImage || "/placeholder.svg"}
-                      alt={trip.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Plane className="h-12 w-12 text-muted-foreground" />
-                  )}
-                </div>
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <h3 className="font-semibold text-lg text-foreground">{trip.name}</h3>
-                    {trip.hostId === currentUserId && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Crown className="h-3 w-3 mr-1" />
-                        호스트
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      <span>{trip.destination}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {trip.startDate} - {trip.endDate}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>{trip.memberCount}명</span>
+                      <span>{g.period}</span>
                     </div>
                   </div>
                 </CardContent>

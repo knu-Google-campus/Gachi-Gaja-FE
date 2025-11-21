@@ -7,7 +7,12 @@ import App from "./App.jsx";
 
 if (import.meta.env.DEV) {
   const { worker } = await import('./mocks/browser')
-  await worker.start()
+  console.info('[MSW] Starting mock service worker...')
+  await worker.start({
+    serviceWorker: { url: '/mockServiceWorker.js' },
+    onUnhandledRequest: 'bypass'
+  })
+  console.info('[MSW] Worker started. Requests to /api/* will be intercepted.')
 }
 
 createRoot(document.getElementById("root")).render(

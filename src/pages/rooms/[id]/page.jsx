@@ -4,22 +4,15 @@ import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Header } from "@/components/header"
-import { Copy, Settings, Calendar, Users, Edit, Crown } from "lucide-react" // Added Crown icon
-import { mockRooms, mockOpinions, currentUserId } from "@/lib/mock-data" // Added currentUserId import
-import { getGroupInfo, getGroupMembers } from "@/api/group"
+import { Copy, Settings, Calendar, Users, Edit, Crown } from "lucide-react"
+import { getGroupDetail, getGroupMembers } from "@/api/group"
+import { getRequirements, createRequirement, updateRequirement } from "@/api/requirements"
 
 export default function RoomDetailPage() {
   const navigate = useNavigate()
@@ -27,51 +20,54 @@ export default function RoomDetailPage() {
 
   const [room, setRoom] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [opinions, setOpinions] = useState([])
-  
-  const [opinion, setOpinion] = useState("")
-  const [selectedKeywords, setSelectedKeywords] = useState([])
+  const [requirements, setRequirements] = useState([])
+  const [opinionText, setOpinionText] = useState("")
+  const [editingId, setEditingId] = useState(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-
-  // 현재 로그인한 유저 ID
   const currentUserId = localStorage.getItem("userId")
 
-  // 방 정보 가져오기
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        const [roomData, membersResponse] = await Promise.all([
-          getGroupInfo(roomId),
-          getGroupMembers(roomId)
+        setIsLoading(true)
+        const [roomData, membersResponse, reqRes] = await Promise.all([
+          getGroupDetail(roomId),
+          getGroupMembers(roomId),
+          getRequirements(roomId)
         ])
-        setRoom({
-          ...roomData,
-          members: membersResponse.Members
-        })
-        setOpinions([]);
-
+        setRoom({ ...roomData, members: membersResponse.Members })
+        setRequirements(reqRes.requirements || [])
       } catch (error) {
-        console.error("데이터 로딩 실패 : ", error);
-        alert("존재하지 않는 방이거나 오류가 발생했습니다.");
+        console.error("데이터 로딩 실패 : ", error)
+        alert("존재하지 않는 방이거나 오류가 발생했습니다.")
         navigate("/rooms")
-
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
-
-    if (roomId) {
-      fetchData();
     }
-  }, [roomId, navigate]);
+    if (roomId) fetchData()
+  }, [roomId, navigate])
 
-  const toggleKeyword = (keyword) => {
-    setSelectedKeywords((prev) => (prev.includes(keyword) ? prev.filter((k) => k !== keyword) : [...prev, keyword]))
-  }
-
-  const handleSaveOpinion = () => {
-    setIsDialogOpen(false)
+  const handleSaveRequirement = async () => {
+    try {
+      if (!opinionText.trim()) {
+        alert('내용을 입력하세요')
+        return
+      }
+      if (editingId) {
+        await updateRequirement(roomId, editingId, opinionText.trim())
+        setRequirements(prev => prev.map(r => r.requirementId === editingId ? { ...r, text: opinionText.trim() } : r))
+      } else {
+        const res = await createRequirement(roomId, opinionText.trim())
+        const me = room.members.find(m => m.userId === currentUserId)
+        setRequirements(prev => [...prev, { requirementId: res.requirementId, text: opinionText.trim(), nickname: me?.nickname || '나', userId: currentUserId }])
+      }
+      setOpinionText('')
+      setEditingId(null)
+      setIsDialogOpen(false)
+    } catch (e) {
+      alert(e.message || '저장 실패')
+    }
   }
 
   const inviteLink = `https://gachigaja.com/invite/${roomId}`
@@ -101,8 +97,6 @@ export default function RoomDetailPage() {
   const today = new Date()
   const deadline = new Date(room.rDeadline)
   const daysRemaining = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
-
-  const keywords = ["휴식", "활동적", "자연", "관광지", "맛집", "쇼핑", "문화체험", "사진", "모험", "스포츠"]
 
   const isLeader = room.members?.find(m => m.userId === currentUserId)?.role === 'LEADER'
 
@@ -140,7 +134,7 @@ export default function RoomDetailPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(room.members || []).map((member) => {
-                    const memberOpinion = opinions.find((o) => o.userId === member.userId)
+                    const memberOpinion = requirements.find(r => r.userId === member.userId)
                     const isCurrentUser = member.userId === currentUserId
                     const isHost = member.role === 'LEADER'
 
@@ -161,46 +155,29 @@ export default function RoomDetailPage() {
                             {isCurrentUser && <Badge variant="secondary">나</Badge>}
                           </div>
                           {isCurrentUser && (
-                            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                            <Dialog open={isDialogOpen} onOpenChange={(open)=>{ if(!open){ setEditingId(null); setOpinionText(''); } setIsDialogOpen(open) }}>
                               <DialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" onClick={() => { setEditingId(memberOpinion?.requirementId || null); setOpinionText(memberOpinion?.text || '') }}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl">
                                 <DialogHeader>
-                                  <DialogTitle>의견 {memberOpinion ? "수정" : "추가"}하기</DialogTitle>
-                                  <DialogDescription>당신이 원하는 여행 스타일을 적어주세요</DialogDescription>
+                                  <DialogTitle>의견 {memberOpinion ? '수정' : '추가'}하기</DialogTitle>
+                                  <DialogDescription>원하는 여행 스타일/의견을 작성해주세요</DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 pt-4">
                                   <div className="space-y-2">
-                                    <Label htmlFor="opinion">여행 스타일</Label>
+                                    <Label htmlFor="opinionText">여행 의견</Label>
                                     <Textarea
-                                      id="opinion"
+                                      id="opinionText"
                                       placeholder="원하는 여행 스타일을 자유롭게 작성해주세요..."
-                                      value={opinion}
-                                      onChange={(e) => setOpinion(e.target.value)}
+                                      value={opinionText}
+                                      onChange={(e) => setOpinionText(e.target.value)}
                                       rows={5}
                                     />
                                   </div>
-                                  <div className="space-y-2">
-                                    <Label>키워드 (선택사항)</Label>
-                                    <div className="flex flex-wrap gap-2">
-                                      {keywords.map((keyword) => (
-                                        <Badge
-                                          key={keyword}
-                                          variant={selectedKeywords.includes(keyword) ? "default" : "outline"}
-                                          className="cursor-pointer"
-                                          onClick={() => toggleKeyword(keyword)}
-                                        >
-                                          {keyword}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  <Button className="w-full" onClick={handleSaveOpinion}>
-                                    저장
-                                  </Button>
+                                  <Button className="w-full" onClick={handleSaveRequirement}>저장</Button>
                                 </div>
                               </DialogContent>
                             </Dialog>
@@ -208,21 +185,10 @@ export default function RoomDetailPage() {
                         </div>
                         {memberOpinion ? (
                           <div>
-                            <p className="text-sm text-muted-foreground mb-2">{memberOpinion.preferences}</p>
-                            {memberOpinion.keywords && memberOpinion.keywords.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {memberOpinion.keywords.map((keyword) => (
-                                  <Badge key={keyword} variant="secondary" className="text-xs">
-                                    {keyword}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
+                            <p className="text-sm text-muted-foreground mb-2 whitespace-pre-line">{memberOpinion.text}</p>
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground italic">
-                            {isCurrentUser ? "의견을 추가해주세요" : "아직 의견을 작성하지 않았습니다"}
-                          </p>
+                          <p className="text-sm text-muted-foreground italic">{isCurrentUser ? '의견을 추가해주세요' : '아직 의견을 작성하지 않았습니다'}</p>
                         )}
                       </div>
                     )

@@ -200,28 +200,6 @@ export const handlers = [
     })
   }),
 
-  // 모임 멤버 조회 (GET /api/groups/:groupId/members)
-  http.get('/api/groups/:groupId/members', ({ params }) => {
-    const { groupId } = params
-    const group = groups.find(g => g.groupId === groupId)
-    
-    if (!group) return HttpResponse.json({ message: '없음' }, { status: 404 })
-
-    const Members = group.members.map((memberId, index) => {
-      const user = users.find(u => u.userId === memberId)
-      if (!user) return null
-      
-      return {
-        memberId: String(index + 1),
-        userId: user.userId,
-        nickname: user.nickname,
-        role: group.leaderId === user.userId ? 'LEADER' : 'MEMBER' 
-      }
-    }).filter(Boolean)
-
-    return HttpResponse.json({ Members }) 
-  }),
-
   // 모임 삭제 (DELETE /api/groups/:groupId?userId=...)
   http.delete('/api/groups/:groupId', ({ params, request }) => {
     const url = new URL(request.url)
@@ -375,23 +353,18 @@ export const handlers = [
       return HttpResponse.json({ message: '재생성 3회 초과' }, { status: 400 })
     }
     group.candidates.callCnt++
-    // generate dummy candidate
-    const candidatePlanId = generateId('cpl')
-    group.candidates.list.push({ candidatePlanId, content: '더미 후보 일정', votes: 0, votedUsers: [] })
-    return HttpResponse.json({ message: '후보 생성 완료', callCnt: group.candidates.callCnt })
-  }),
-  http.get('/api/groups/:groupId/candidates/:candidateId', ({ params }) => {
-    const { groupId, candidateId } = params
-    const group = groups.find(g => g.groupId === groupId)
-    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
-    const found = group.candidates.list.find(c => c.candidatePlanId === candidateId)
-    if (!found) return HttpResponse.json({ message: 'candidateId 없음' }, { status: 404 })
-    return HttpResponse.json({
-      groupId,
-      isLeader: true,
-      callCnt: group.candidates.callCnt,
-      candidatePlans: group.candidates.list.map(c => ({ candidatePlanId: c.candidatePlanId, content: c.content, votes: c.votes, voted: false }))
-    })
+    // 2개의 후보 일정 생성 (기존 목록 덮어씀)
+    const baseContents = [
+      '자연 & 휴식 중심 일정 (샘플)',
+      '액티비티 & 관광 중심 일정 (샘플)'
+    ]
+    group.candidates.list = baseContents.map(content => ({
+      candidatePlanId: generateId('cpl'),
+      content,
+      votes: 0,
+      votedUsers: []
+    }))
+    return HttpResponse.json({ message: '후보 2개 생성 완료', callCnt: group.candidates.callCnt })
   }),
   // Vote list summary
   http.get('/api/groups/:groupId/candidates/votes', ({ params, request }) => {
@@ -410,6 +383,29 @@ export const handlers = [
         content: c.content,
         votes: c.votes,
         voted: c.votedUsers.includes(userId)
+      }))
+    })
+  }),
+  // Candidate detail (placed AFTER votes to avoid route shadowing "votes")
+  http.get('/api/groups/:groupId/candidates/:candidateId', ({ params }) => {
+    const { groupId, candidateId } = params
+    if (candidateId === 'votes') {
+      // 안전장치: 잘못 매칭되었을 경우 명확한 안내 반환
+      return HttpResponse.json({ message: '잘못된 경로 매칭: votes는 상세 후보 ID가 아님' }, { status: 400 })
+    }
+    const group = groups.find(g => g.groupId === groupId)
+    if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
+    const found = group.candidates.list.find(c => c.candidatePlanId === candidateId)
+    if (!found) return HttpResponse.json({ message: 'candidateId 없음' }, { status: 404 })
+    return HttpResponse.json({
+      groupId,
+      isLeader: true,
+      callCnt: group.candidates.callCnt,
+      candidatePlans: group.candidates.list.map(c => ({
+        candidatePlanId: c.candidatePlanId,
+        content: c.content,
+        votes: c.votes,
+        voted: false
       }))
     })
   }),
@@ -449,10 +445,20 @@ export const handlers = [
     const group = groups.find(g => g.groupId === groupId)
     if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
     try {
-      const body = await request.json()
+      const { text } = await request.json()
+      if (!text || !text.trim()) {
+        return HttpResponse.json({ message: '텍스트 누락' }, { status: 400 })
+      }
       const requirementId = generateId('r')
-      const member = group.members[0] // simplistic: first member acts as author
-      const req = { requirementId, memberId: member.memberId, userId: member.userId, nickname: member.nickname, ...body }
+      const author = group.members[0] // 임시: 첫 멤버를 작성자로 사용
+      const req = {
+        requirementId,
+        memberId: author.memberId,
+        userId: author.userId,
+        nickname: author.nickname,
+        text: text.trim(),
+        createdAt: new Date().toISOString()
+      }
       group.requirements.push(req)
       return HttpResponse.json({ message: '요구사항 생성이 완료되었습니다', requirementId })
     } catch (e) {
@@ -463,8 +469,17 @@ export const handlers = [
     const { groupId } = params
     const group = groups.find(g => g.groupId === groupId)
     if (!group) return HttpResponse.json({ message: 'groupId 잘못됨' }, { status: 404 })
-    const totalMembers = group.members.length
-    return HttpResponse.json({ totalMembers, requirements: group.requirements })
+    return HttpResponse.json({
+      totalMembers: group.members.length,
+      requirements: group.requirements.map(r => ({
+        requirementId: r.requirementId,
+        memberId: r.memberId,
+        userId: r.userId,
+        nickname: r.nickname,
+        text: r.text,
+        createdAt: r.createdAt
+      }))
+    })
   }),
   http.put('/api/groups/:groupId/requirements/:requirementId', async ({ params, request }) => {
     const { groupId, requirementId } = params
@@ -473,8 +488,11 @@ export const handlers = [
     const req = group.requirements.find(r => r.requirementId === requirementId)
     if (!req) return HttpResponse.json({ message: 'requirementId 없음' }, { status: 404 })
     try {
-      const body = await request.json()
-      Object.assign(req, body)
+      const { text } = await request.json()
+      if (!text || !text.trim()) {
+        return HttpResponse.json({ message: '텍스트 누락' }, { status: 400 })
+      }
+      req.text = text.trim()
       return HttpResponse.json({ message: '요구 사항 수정이 완료되었습니다.' })
     } catch (e) {
       return HttpResponse.json({ message: '서버 오류' }, { status: 500 })

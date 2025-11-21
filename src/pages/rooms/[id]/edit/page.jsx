@@ -9,30 +9,65 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Header } from "@/components/header"
 import { ArrowLeft } from "lucide-react"
-import { mockRooms } from "@/lib/mock-data"
+import { useEffect } from "react"
+import { getGroupDetail, updateGroup } from "@/api/group"
 
 export default function EditRoomPage() {
   const navigate = useNavigate()
   const params = useParams()
   const roomId = params.id
 
-  const room = mockRooms.find((r) => r.id === roomId) || mockRooms[0]
-
   const [formData, setFormData] = useState({
-    name: room.name,
-    companions: "가족",
-    destination: room.destination,
-    startDate: room.startDate,
-    endDate: room.endDate,
+    name: "",
+    companions: "",
+    destination: "",
+    startDate: "",
+    endDate: "",
     transportation: "plane",
-    budget: "500000",
+    budget: "",
     accommodationType: "single",
-    deadline: room.opinionDeadline,
+    deadline: "",
   })
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await getGroupDetail(roomId)
+        setFormData(prev => ({
+          ...prev,
+          name: data.title,
+          destination: data.region,
+          // period parsing not implemented (n박 m일)
+          transportation: data.transportation,
+          budget: data.budget,
+          deadline: data.rDeadline
+        }))
+      } catch (e) {
+        alert(e.message || '그룹 정보를 불러오지 못했습니다')
+        navigate('/rooms')
+      }
+    }
+    if (roomId) load()
+  }, [roomId, navigate])
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    navigate(`/rooms/${roomId}`)
+    try {
+      const payload = {
+        title: formData.name,
+        region: formData.destination,
+        startingPlace: '미정',
+        endingPlace: '미정',
+        transportation: formData.transportation,
+        period: '3박 4일',
+        budget: parseInt(formData.budget) || 0,
+        rDeadline: formData.deadline
+      }
+      await updateGroup(roomId, payload)
+      navigate(`/rooms/${roomId}`)
+    } catch (e) {
+      alert(e.message || '수정 실패')
+    }
   }
 
   return (
@@ -41,7 +76,7 @@ export default function EditRoomPage() {
 
       <main className="container mx-auto px-4 py-8">
         <button
-          onClick={() => router.push(`/rooms/${roomId}`)}
+          onClick={() => navigate(`/rooms/${roomId}`)}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-4 w-4" />

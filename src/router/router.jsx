@@ -18,12 +18,15 @@ import ConfirmedPlanPage from "@/pages/rooms/[id]/confirmed/page.jsx"
 import EditConfirmedPlanPage from "@/pages/rooms/[id]/confirmed/edit/page.jsx"
 // 일정(플랜) 페이지
 import PlansPage from "@/pages/rooms/[id]/plans/page.jsx"
+import InviteAcceptPage from "@/pages/invite/[id]/page.jsx"
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* 루트 */}
       <Route path="/" element={<LandingPage />} />
+      {/* 초대 수락 */}
+      <Route path="/invite/:id" element={<InviteAcceptPage />} />
 
       {/* /rooms 그룹 */}
       <Route path="/rooms">

@@ -14,6 +14,7 @@ export default function LandingPage() {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [passwordError, setPasswordError] = useState("")
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -24,7 +25,17 @@ export default function LandingPage() {
         navigate("/rooms")
       } else{
         // 비밀번호 검증
+        // 비밀번호 검증: 8자 이상 + 특수문자 포함
+        const pw = password || ""
+        const hasMinLen = pw.length >= 8
+        const hasSpecial = /[^A-Za-z0-9]/.test(pw)
+        if (!hasMinLen || !hasSpecial) {
+          setPasswordError("비밀번호는 8자리 이상이며 특수문자를 포함해야 합니다.")
+          alert("비밀번호는 8자리 이상이며 특수문자를 포함해야 합니다.")
+          return
+        }
         if (password !== confirmPassword) {
+          setPasswordError("비밀번호가 일치하지 않습니다.")
           alert("비밀번호가 일치하지 않습니다.")
           return
         }
@@ -32,7 +43,7 @@ export default function LandingPage() {
         const data = await registerUser({
           email,
           password,
-          nickname: name
+          nickName: name
         })
         alert("회원가입이 완료되었습니다.")
 
@@ -41,6 +52,7 @@ export default function LandingPage() {
         setName("")
         setPassword("")
         setConfirmPassword("")
+        setPasswordError("")
       }
     } catch (error) {
       console.error("에러 : ", error)
@@ -133,6 +145,7 @@ export default function LandingPage() {
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">비밀번호 확인</Label>
                     <Input id="confirm-password" type="password" placeholder="••••••••" className="h-11" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    {passwordError && (<p className="text-red-500 text-xs mt-1">{passwordError}</p>)}
                   </div>
                 )}
                 <Button type="submit" className="w-full h-11 text-base">

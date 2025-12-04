@@ -17,10 +17,13 @@ export default async function handler(req, res) {
   const headers = {};
   for (const [key, value] of Object.entries(req.headers)) {
     const k = key.toLowerCase();
-    // Drop hop-by-hop and browser-originating headers that can trigger backend CORS/CSRF checks
-    if (['host', 'connection', 'content-length', 'origin', 'referer'].includes(k)) continue;
+    // Drop hop-by-hop headers
+    if (['host', 'connection', 'content-length'].includes(k)) continue;
     headers[key] = value;
   }
+  // Set Origin/Referer to backend origin to satisfy CSRF policies expecting server-origin requests
+  headers['Origin'] = backendOrigin;
+  headers['Referer'] = backendOrigin;
 
   const hasBody = !(req.method === 'GET' || req.method === 'HEAD');
   let body;

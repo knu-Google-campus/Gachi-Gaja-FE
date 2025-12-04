@@ -1,49 +1,95 @@
 
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plane, ArrowLeft, Plus, Trash2 } from "lucide-react"
 import { Link, useNavigate, useParams } from "react-router-dom"
+import { getFinalPlans, updatePlan, addNewPlan, deletePlan } from "@/api/plans"
+ 
 
 export default function EditConfirmedPlanPage() {
   const navigate = useNavigate()
-  const { id = "1" } = useParams()
-  const [schedule, setSchedule] = useState([
-    {
-      day: 1,
-      date: "2024.12.20 (금)",
-      activities: [
-        { time: "09:00", location: "김포공항 출발", transport: "비행기" },
-        { time: "10:30", location: "제주공항 도착", transport: "렌터카" },
-        { time: "12:00", location: "올레국수 (점심)", transport: "도보" },
-      ],
-    },
-  ])
+  const { id } = useParams()
+  const [plans, setPlans] = useState([]) // API planList 기반
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [deletedPlanIds, setDeletedPlanIds] = useState([])
 
-  const addActivity = (dayIndex) => {
-    const newSchedule = [...schedule]
-    newSchedule[dayIndex].activities.push({ time: "", location: "", transport: "" })
-    setSchedule(newSchedule)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const res = await getFinalPlans(id)
+        const list = Array.isArray(res?.planList) ? res.planList : []
+        setPlans(list.map(p => ({ ...p, _isNew: false })))
+      } catch (e) {
+        setError(e.message || '최종 계획을 불러오는 중 오류가 발생했습니다')
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (id) load()
+  }, [id])
+
+  const addActivity = () => {
+    setPlans(prev => ([
+      ...prev,
+      {
+        planId: undefined,
+        startingTime: "",
+        endingTime: "",
+        location: "",
+        info: "",
+        transportation: "",
+        cost: "",
+        _isNew: true
+      }
+    ]))
   }
 
-  const removeActivity = (dayIndex, activityIndex) => {
-    const newSchedule = [...schedule]
-    newSchedule[dayIndex].activities.splice(activityIndex, 1)
-    setSchedule(newSchedule)
+  const removeActivity = (index) => {
+    setPlans(prev => {
+      const removing = prev[index]
+      if (removing?.planId) {
+        setDeletedPlanIds(ids => [...ids, removing.planId])
+      }
+      return prev.filter((_, i) => i !== index)
+    })
   }
 
-  const updateActivity = (dayIndex, activityIndex, field, value) => {
-    const newSchedule = [...schedule]
-    newSchedule[dayIndex].activities[activityIndex][field] = value
-    setSchedule(newSchedule)
+  const updateActivity = (index, field, value) => {
+    setPlans(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    navigate(`/rooms/${id}/confirmed`)
+    try {
+      // 삭제 요청 (여러 개 가능)
+      for (const delId of deletedPlanIds) {
+        await deletePlan(id, delId)
+      }
+      for (const p of plans) {
+        const body = {
+          startingTime: p.startingTime,
+          endingTime: p.endingTime,
+          location: p.location,
+          info: p.info,
+          transportation: p.transportation,
+          cost: p.cost,
+        }
+        if (p._isNew) {
+          await addNewPlan(id, body)
+        } else if (p.planId) {
+          await updatePlan(id, p.planId, body)
+        }
+      }
+      navigate(`/rooms/${id}/confirmed`)
+    } catch (err) {
+      alert(err.message || '저장 중 오류가 발생했습니다')
+    }
   }
 
   return (
@@ -59,6 +105,11 @@ export default function EditConfirmedPlanPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {loading && (
+          <div className="min-h-[120px] flex items-center justify-center">
+            <Spinner label="계획 수정 정보를 불러오는 중..." size={40} />
+          </div>
+        )}
         <Link
           to={`/rooms/${id}/confirmed`}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -73,60 +124,47 @@ export default function EditConfirmedPlanPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {schedule.map((day, dayIndex) => (
-                <Card key={dayIndex}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      Day {day.day} - {day.date}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {day.activities.map((activity, activityIndex) => (
-                      <div key={activityIndex} className="grid grid-cols-12 gap-3 items-end">
-                        <div className="col-span-3 space-y-2">
-                          <Label htmlFor={`time-${dayIndex}-${activityIndex}`}>시간</Label>
-                          <Input
-                            id={`time-${dayIndex}-${activityIndex}`}
-                            type="time"
-                            value={activity.time}
-                            onChange={(e) => updateActivity(dayIndex, activityIndex, "time", e.target.value)}
-                          />
-                        </div>
-                        <div className="col-span-4 space-y-2">
-                          <Label htmlFor={`location-${dayIndex}-${activityIndex}`}>장소</Label>
-                          <Input
-                            id={`location-${dayIndex}-${activityIndex}`}
-                            value={activity.location}
-                            onChange={(e) => updateActivity(dayIndex, activityIndex, "location", e.target.value)}
-                          />
-                        </div>
-                        <div className="col-span-4 space-y-2">
-                          <Label htmlFor={`transport-${dayIndex}-${activityIndex}`}>이동수단</Label>
-                          <Input
-                            id={`transport-${dayIndex}-${activityIndex}`}
-                            value={activity.transport}
-                            onChange={(e) => updateActivity(dayIndex, activityIndex, "transport", e.target.value)}
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeActivity(dayIndex, activityIndex)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  {plans.map((p, index) => (
+                    <div key={p.planId || index} className="grid grid-cols-12 gap-3 items-end">
+                      <div className="col-span-3 space-y-2">
+                        <Label>시작 시간</Label>
+                        <Input type="datetime-local" value={p.startingTime} onChange={(e) => updateActivity(index, 'startingTime', e.target.value)} />
                       </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => addActivity(dayIndex)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      일정 추가
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="col-span-3 space-y-2">
+                        <Label>종료 시간</Label>
+                        <Input type="datetime-local" value={p.endingTime} onChange={(e) => updateActivity(index, 'endingTime', e.target.value)} />
+                      </div>
+                      <div className="col-span-3 space-y-2">
+                        <Label>장소</Label>
+                        <Input value={p.location} onChange={(e) => updateActivity(index, 'location', e.target.value)} />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <Label>이동수단</Label>
+                        <Input value={p.transportation} onChange={(e) => updateActivity(index, 'transportation', e.target.value)} />
+                      </div>
+                      <div className="col-span-12 space-y-2">
+                        <Label>설명</Label>
+                        <Input value={p.info} onChange={(e) => updateActivity(index, 'info', e.target.value)} />
+                      </div>
+                      <div className="col-span-3 sm:col-span-2 space-y-2">
+                        <Label>비용</Label>
+                        <Input type="number" value={p.cost} onChange={(e) => updateActivity(index, 'cost', e.target.value)} />
+                      </div>
+                      <div className="col-span-12 flex justify-end">
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeActivity(index)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={addActivity}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    일정 추가
+                  </Button>
+                </CardContent>
+              </Card>
 
               <div className="flex gap-4">
                 <Button type="button" variant="outline" className="flex-1 bg-transparent" onClick={() => navigate(-1)}>

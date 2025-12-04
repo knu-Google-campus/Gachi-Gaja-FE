@@ -19,15 +19,25 @@ export default function EditRoomPage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    companions: "",
     destination: "",
+    startingPlace: "",
+    endingPlace: "",
     startDate: "",
     endDate: "",
     transportation: "plane",
     budget: "",
-    accommodationType: "single",
     deadline: "",
   })
+
+  // n박 m일 계산 함수
+  const calculatePeriod = (startDate, endDate) => {
+    if (!startDate || !endDate) return "";
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays}박 ${diffDays + 1}일`;
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -37,10 +47,14 @@ export default function EditRoomPage() {
           ...prev,
           name: data.title,
           destination: data.region,
+          startingPlace: data.startingPlace || prev.startingPlace,
+          endingPlace: data.endingPlace || prev.endingPlace,
           // period parsing not implemented (n박 m일)
           transportation: data.transportation,
           budget: data.budget,
-          deadline: data.rDeadline
+          deadline: data.rDeadline,
+          startDate: data.startingDay || prev.startDate,
+          endDate: data.endingDay || prev.endDate
         }))
       } catch (e) {
         alert(e.message || '그룹 정보를 불러오지 못했습니다')
@@ -56,12 +70,14 @@ export default function EditRoomPage() {
       const payload = {
         title: formData.name,
         region: formData.destination,
-        startingPlace: '미정',
-        endingPlace: '미정',
+        startingPlace: formData.startingPlace,
+        endingPlace: formData.endingPlace,
         transportation: formData.transportation,
-        period: '3박 4일',
+        period: calculatePeriod(formData.startDate, formData.endDate),
         budget: parseInt(formData.budget) || 0,
-        rDeadline: formData.deadline
+        rDeadline: formData.deadline,
+        startingDay: formData.startDate,
+        endingDay: formData.endDate
       }
       await updateGroup(roomId, payload)
       navigate(`/rooms/${roomId}`)
@@ -100,15 +116,7 @@ export default function EditRoomPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="companions">누구와 가나요? *</Label>
-                <Input
-                  id="companions"
-                  value={formData.companions}
-                  onChange={(e) => setFormData({ ...formData, companions: e.target.value })}
-                  required
-                />
-              </div>
+              
 
               <div className="space-y-2">
                 <Label htmlFor="destination">목적지 *</Label>
@@ -116,6 +124,26 @@ export default function EditRoomPage() {
                   id="destination"
                   value={formData.destination}
                   onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="startingPlace">여행 시작지 *</Label>
+                <Input
+                  id="startingPlace"
+                  value={formData.startingPlace}
+                  onChange={(e) => setFormData({ ...formData, startingPlace: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endingPlace">여행 도착지 *</Label>
+                <Input
+                  id="endingPlace"
+                  value={formData.endingPlace}
+                  onChange={(e) => setFormData({ ...formData, endingPlace: e.target.value })}
                   required
                 />
               </div>
@@ -145,21 +173,13 @@ export default function EditRoomPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="transportation">교통 수단 *</Label>
-                <Select
+                <Input
+                  id="transportation"
+                  placeholder="예: 렌터카, 기차, 버스"
                   value={formData.transportation}
-                  onValueChange={(value) => setFormData({ ...formData, transportation: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="car">자동차</SelectItem>
-                    <SelectItem value="train">기차</SelectItem>
-                    <SelectItem value="bus">버스</SelectItem>
-                    <SelectItem value="plane">비행기</SelectItem>
-                    <SelectItem value="mixed">혼합</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setFormData({ ...formData, transportation: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="space-y-2">
@@ -173,21 +193,7 @@ export default function EditRoomPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="accommodationType">숙소 타입 *</Label>
-                <Select
-                  value={formData.accommodationType}
-                  onValueChange={(value) => setFormData({ ...formData, accommodationType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">단일 숙소</SelectItem>
-                    <SelectItem value="multiple">다중 숙소</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              
 
               <div className="space-y-2">
                 <Label htmlFor="deadline">의견 수집 마감일 *</Label>

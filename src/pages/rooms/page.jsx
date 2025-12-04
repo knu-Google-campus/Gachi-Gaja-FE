@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge" // Added Badge import
+import { Badge } from "@/components/ui/badge"
+import { Spinner } from "@/components/ui/spinner"
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,9 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Header } from "@/components/header"
-import { Plane, Plus, LogIn, Calendar, MapPin, Users, Crown } from "lucide-react" // Added Crown icon
+import { Plane, Plus, LogIn, Calendar, MapPin, Users, Crown } from "lucide-react"
 import { getMyGroups } from "@/api/group"
+import { acceptInvite } from "@/api/invites"
 
 const currentUserId = localStorage.getItem('userId')
 
@@ -43,21 +45,28 @@ export default function RoomsPage() {
     load()
   }, [])
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     if (!joinLink) return
 
-    // 1) /rooms/:id 패턴에서 id 추출 시도
-    let id = joinLink.match(/\/rooms\/([^\/?#]+)/)?.[1]
+    // 우선순위: /invite/:groupId → /groups/:groupId → /rooms/:id
+    const inviteGroupId = joinLink.match(/\/invite\/([^\/?#]+)/)?.[1]
+    const groupsPathId = joinLink.match(/\/groups\/([^\/?#]+)/)?.[1]
+    const roomsPathId = joinLink.match(/\/rooms\/([^\/?#]+)/)?.[1]
 
-    // 2) 숫자로 된 어떤 ID라도 추출 시도 (예: .../123)
-    if (!id) {
-      id = joinLink.match(/(\d+)/)?.[1]
+    const targetId = inviteGroupId || groupsPathId || roomsPathId
+
+    if (targetId) {
+      try {
+        // 초대 수락(POST) 후 해당 방으로 이동
+        await acceptInvite(targetId)
+        return navigate(`/rooms/${targetId}`)
+      } catch (e) {
+        window.alert(e.message || '초대 수락에 실패했습니다.')
+        return
+      }
     }
 
-    if (id) return navigate(`/rooms/${id}`)
-    const inviteCode = joinLink.match(/\/invite\/([^\/?#]+)/)?.[1]
-    if (inviteCode && groups.length) return navigate(`/rooms/${groups[0].groupId}`)
-    window.alert('유효한 초대 링크를 입력해주세요.')
+    window.alert('유효한 초대/그룹 링크를 입력해주세요.')
   }
 
   return (
@@ -102,7 +111,11 @@ export default function RoomsPage() {
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-6">내 여행 그룹</h2>
-          {loading && <p className="text-sm text-muted-foreground">불러오는 중...</p>}
+          {loading && (
+            <div className="py-8">
+              <Spinner label="내 여행 그룹을 불러오는 중..." size={32} />
+            </div>
+          )}
           {error && <p className="text-sm text-destructive">{error}</p>}
           {!loading && !error && groups.length === 0 && (
             <p className="text-sm text-muted-foreground">가입된 그룹이 없습니다. 새로 생성하거나 초대 링크로 참여하세요.</p>

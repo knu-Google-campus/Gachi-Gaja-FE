@@ -1,5 +1,3 @@
-
-
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -15,7 +13,6 @@ export default function CreateRoomPage() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     name: "",
-    companions: "",
     region: "",
     startingPlace: "",
     endingPlace: "",
@@ -23,7 +20,6 @@ export default function CreateRoomPage() {
     endDate: "",
     transportation: "",
     budget: "",
-    accommodationType: "single",
     deadline: "",
   })
 
@@ -41,6 +37,35 @@ export default function CreateRoomPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      // 날짜 유효성 가드
+      const start = new Date(formData.startDate)
+      const end = new Date(formData.endDate)
+      const today = new Date()
+      // normalize today to date-only
+      today.setHours(0,0,0,0)
+      if (isNaN(start) || isNaN(end)) {
+        alert('출발/종료 일자를 올바르게 입력해주세요')
+        return
+      }
+      if (start > end) {
+        alert('출발 일자는 종료 일자보다 이후일 수 없습니다')
+        return
+      }
+      const dl = new Date(formData.deadline)
+      if (isNaN(dl)) {
+        alert('의견 수집 마감일을 올바르게 입력해주세요')
+        return
+      }
+      dl.setHours(0,0,0,0)
+      if (dl < today) {
+        alert('의견 수집 마감일은 오늘보다 이전일 수 없습니다')
+        return
+      }
+      // 교통 수단 필수 선택 가드
+      if (!formData.transportation) {
+        alert('교통 수단을 선택해주세요')
+        return
+      }
       const payload = {
         title: formData.name,
         region: formData.region,
@@ -49,7 +74,9 @@ export default function CreateRoomPage() {
         transportation: formData.transportation,
         period: calculatePeriod(formData.startDate, formData.endDate),
         budget: parseInt(formData.budget),
-        rDeadline: formData.deadline
+        rDeadline: formData.deadline,
+        startingDay: formData.startDate,
+        endingDay: formData.endDate
       };
 
       const response = await createGroup(payload);
@@ -94,16 +121,7 @@ export default function CreateRoomPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="companions">누구와 가나요? *</Label>
-                <Input
-                  id="companions"
-                  placeholder="예: 가족, 친구, 동료"
-                  value={formData.companions}
-                  onChange={(e) => setFormData({ ...formData, companions: e.target.value })}
-                  required
-                />
-              </div>
+              
 
               <div className="space-y-2">
                 <Label htmlFor="region">여행지 *</Label>
@@ -163,21 +181,13 @@ export default function CreateRoomPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="transportation">교통 수단 *</Label>
-                <Select
+                <Input
+                  id="transportation"
+                  placeholder="예: 렌터카, 기차, 버스"
                   value={formData.transportation}
-                  onValueChange={(value) => setFormData({ ...formData, transportation: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="교통 수단을 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="car">자동차</SelectItem>
-                    <SelectItem value="train">기차</SelectItem>
-                    <SelectItem value="bus">버스</SelectItem>
-                    <SelectItem value="plane">비행기</SelectItem>
-                    <SelectItem value="mixed">혼합</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setFormData({ ...formData, transportation: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="space-y-2">
@@ -192,21 +202,7 @@ export default function CreateRoomPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="accommodationType">숙소 타입 *</Label>
-                <Select
-                  value={formData.accommodationType}
-                  onValueChange={(value) => setFormData({ ...formData, accommodationType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">단일 숙소</SelectItem>
-                    <SelectItem value="multiple">다중 숙소</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              
 
               <div className="space-y-2">
                 <Label htmlFor="deadline">의견 수집 마감일 *</Label>

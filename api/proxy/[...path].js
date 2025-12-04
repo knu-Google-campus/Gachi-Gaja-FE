@@ -17,7 +17,8 @@ export default async function handler(req, res) {
   const headers = {};
   for (const [key, value] of Object.entries(req.headers)) {
     const k = key.toLowerCase();
-    if (['host', 'connection', 'content-length'].includes(k)) continue;
+    // Drop hop-by-hop and browser-originating headers that can trigger backend CORS/CSRF checks
+    if (['host', 'connection', 'content-length', 'origin', 'referer'].includes(k)) continue;
     headers[key] = value;
   }
 

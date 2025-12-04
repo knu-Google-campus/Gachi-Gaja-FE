@@ -29,8 +29,12 @@ const apiClient = axios.create({
 
 // 요청 인터셉터: 필요 시 공통 헤더(예: Authorization) 추가
 apiClient.interceptors.request.use((config) => {
+  // 로그인/회원가입 요청에는 인증/사용자 헤더를 붙이지 않음
+  const urlPath = typeof config.url === 'string' ? config.url : ''
+  const isAuthFree = /\/login$|\/register$|\/users$/.test(urlPath)
+
   const userId = localStorage.getItem('userId')
-  if (userId && !config.headers['X-USER-ID']) {
+  if (!isAuthFree && userId && !config.headers['X-USER-ID']) {
     config.headers['X-USER-ID'] = userId
   }
   
@@ -38,7 +42,7 @@ apiClient.interceptors.request.use((config) => {
   const lsToken = localStorage.getItem('token')
   const token = lsAccess || lsToken
   const tokenSource = lsAccess ? 'localStorage:accessToken' : lsToken ? 'localStorage:token' : 'none'
-  if (token) {
+  if (!isAuthFree && token) {
     // 기존 값이 있으면 덮어씀
     config.headers['Authorization'] = `Bearer ${token}`
     if (import.meta.env.DEV) {

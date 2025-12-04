@@ -5,7 +5,9 @@ import "./globals.css";
 import App from "./App.jsx";
 // import "./api/axiosInstance";
 
-if (import.meta.env.DEV) {
+// MSW 사용 여부를 환경 변수로 제어
+const useMock = import.meta.env.VITE_USE_MSW === 'true'
+if (import.meta.env.DEV && useMock) {
   const { worker } = await import('./mocks/browser')
   console.info('[MSW] Starting mock service worker...')
   await worker.start({

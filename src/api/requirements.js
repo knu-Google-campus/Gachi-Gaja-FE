@@ -1,7 +1,18 @@
 import apiClient from './client.js'
 
-export const createRequirement = async (groupId, text) => {
-  const { data } = await apiClient.post(`/groups/${groupId}/requirements`, { text })
+export const createRequirement = async (groupId, requirement) => {
+  // requirement camelCase: { style?, schedule?, lodgingCriteria?, lodgingType?, mealBudget?, eatingHabit?, distance?, plusRequirement? }
+  const payload = {
+    style: requirement?.style || '',
+    schedule: requirement?.schedule || '',
+    lodgingCriteria: requirement?.lodgingCriteria || '',
+    lodgingType: requirement?.lodgingType || '',
+    mealBudget: requirement?.mealBudget || '',
+    eatingHabit: requirement?.eatingHabit || '',
+    distance: requirement?.distance || '',
+    plusRequirement: requirement?.plusRequirement || '',
+  }
+  const { data } = await apiClient.post(`/groups/${groupId}/requirements`, payload)
   return data
 }
 
@@ -10,8 +21,18 @@ export const getRequirements = async (groupId) => {
   return data
 }
 
-export const updateRequirement = async (groupId, requirementId, text) => {
-  const { data } = await apiClient.put(`/groups/${groupId}/requirements/${requirementId}`, { text })
+export const updateRequirement = async (groupId, requirementId, requirement) => {
+  const payload = {
+    style: requirement?.style || '',
+    schedule: requirement?.schedule || '',
+    lodgingCriteria: requirement?.lodgingCriteria || '',
+    lodgingType: requirement?.lodgingType || '',
+    mealBudget: requirement?.mealBudget || '',
+    eatingHabit: requirement?.eatingHabit || '',
+    distance: requirement?.distance || '',
+    plusRequirement: requirement?.plusRequirement || '',
+  }
+  const { data } = await apiClient.put(`/groups/${groupId}/requirements/${requirementId}`, payload)
   return data
 }
 

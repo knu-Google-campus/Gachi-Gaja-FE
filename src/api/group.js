@@ -2,29 +2,27 @@ import apiClient from './client.js'
 
 // 여행 그룹 생성 API
 export const createGroup = async (groupData) => {
-  const leaderId = localStorage.getItem('userId')
-  const { data } = await apiClient.post(`/groups`, groupData, { params: { userId: leaderId } })
+  const { data } = await apiClient.post(`/groups`, groupData)
   return data
 }
 
 export const getMyGroups = async () => {
-  const userId = localStorage.getItem('userId')
-  const { data } = await apiClient.get('/groups', { params: { userId } })
+  const { data } = await apiClient.get('/groups')
   return data
 }
 
-export const getGroupDetail = async (groupId, userId = localStorage.getItem('userId')) => {
-  const { data } = await apiClient.get(`/groups/${groupId}`, { params: { userId } })
+export const getGroupDetail = async (groupId) => {
+  const { data } = await apiClient.get(`/groups/${groupId}`)
   return data
 }
 
-export const deleteGroup = async (groupId, userId = localStorage.getItem('userId')) => {
-  const { data } = await apiClient.delete(`/groups/${groupId}`, { params: { userId } })
+export const deleteGroup = async (groupId) => {
+  const { data } = await apiClient.delete(`/groups/${groupId}`)
   return data
 }
 
-export const updateGroup = async (groupId, payload, userId = localStorage.getItem('userId')) => {
-  const { data } = await apiClient.put(`/groups/${groupId}`, payload, { params: { userId } })
+export const updateGroup = async (groupId, payload) => {
+  const { data } = await apiClient.put(`/groups/${groupId}`, payload)
   return data
 }
 
@@ -34,6 +32,6 @@ export const getGroupMembers = async (groupId) => {
 }
 
 export const addGroupMember = async (groupId, userId) => {
-  const { data } = await apiClient.post(`/groups/${groupId}/members`, null, { params: { userId } })
+  const { data } = await apiClient.post(`/groups/${groupId}/members`, { userId })
   return data
 }

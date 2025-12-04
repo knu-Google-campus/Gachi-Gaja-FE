@@ -1,92 +1,102 @@
-
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Plane, Copy, Calendar, ChevronDown, ChevronUp, Edit, Users, Crown } from "lucide-react"
-import { Link, useParams } from "react-router-dom"
+import { Plane, Copy, Calendar, Edit, Users, Crown, ArrowLeft } from "lucide-react"
+import { Link, useParams, useSearchParams, useNavigate } from "react-router-dom"
+import { getGroupDetail, getGroupMembers, deleteGroup } from "@/api/group"
+import { getFinalPlans } from "@/api/plans"
+ 
 
 export default function ConfirmedPlanPage() {
   const { id } = useParams()
-  const [expandedDays, setExpandedDays] = useState([1, 2, 3, 4])
-  const inviteLink = "https://gachigaja.com/invite/abc123"
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [inviteLink, setInviteLink] = useState("")
+  const [room, setRoom] = useState(null)
+  const [members, setMembers] = useState([])
+  const [finalPlans, setFinalPlans] = useState([])
+  const [isLeader, setIsLeader] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const hostId = 1
-
-  const members = [
-    { id: 1, name: "홍길동" },
-    { id: 2, name: "김철수" },
-    { id: 3, name: "이영희" },
-    { id: 4, name: "박민수" },
-  ]
-
-  const schedule = [
-    {
-      day: 1,
-      date: "2024.12.20 (금)",
-      activities: [
-        { time: "09:00", location: "김포공항 출발", transport: "비행기" },
-        { time: "10:30", location: "제주공항 도착", transport: "렌터카" },
-        { time: "12:00", location: "올레국수 (점심)", transport: "도보" },
-        { time: "14:00", location: "성산일출봉", transport: "자동차" },
-        { time: "16:30", location: "섭지코지", transport: "자동차" },
-        { time: "18:30", location: "숙소 체크인", transport: "자동차" },
-        { time: "19:30", location: "해산물 맛집 (저녁)", transport: "도보" },
-      ],
-    },
-    {
-      day: 2,
-      date: "2024.12.21 (토)",
-      activities: [
-        { time: "09:00", location: "호텔 조식", transport: "-" },
-        { time: "10:30", location: "한라산 둘레길", transport: "자동차" },
-        { time: "13:00", location: "흑돼지 맛집 (점심)", transport: "자동차" },
-        { time: "15:00", location: "카멜리아힐", transport: "자동차" },
-        { time: "17:30", location: "중문해수욕장 산책", transport: "자동차" },
-        { time: "19:00", location: "숙소 휴식", transport: "자동차" },
-      ],
-    },
-    {
-      day: 3,
-      date: "2024.12.22 (일)",
-      activities: [
-        { time: "09:00", location: "호텔 조식", transport: "-" },
-        { time: "10:30", location: "우도 페리", transport: "자동차+배" },
-        { time: "11:00", location: "우도 자전거 투어", transport: "자전거" },
-        { time: "14:00", location: "우도 해산물 (점심)", transport: "도보" },
-        { time: "16:00", location: "제주 본섬 복귀", transport: "배+자동차" },
-        { time: "18:00", location: "동문시장", transport: "자동차" },
-        { time: "20:00", location: "숙소 휴식", transport: "자동차" },
-      ],
-    },
-    {
-      day: 4,
-      date: "2024.12.23 (월)",
-      activities: [
-        { time: "09:00", location: "체크아웃", transport: "-" },
-        { time: "10:00", location: "협재해수욕장", transport: "자동차" },
-        { time: "12:00", location: "고기국수 (점심)", transport: "자동차" },
-        { time: "14:00", location: "제주공항", transport: "자동차" },
-        { time: "15:30", location: "제주공항 출발", transport: "비행기" },
-        { time: "17:00", location: "김포공항 도착", transport: "-" },
-      ],
-    },
-  ]
-
-  const toggleDay = (day) => {
-    setExpandedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
+  const formatDateTime = (dt) => {
+    if (!dt) return '-'
+    try {
+      // ISO 문자열 또는 날짜로 들어오는 경우 처리
+      const d = typeof dt === 'string' ? new Date(dt) : dt
+      if (isNaN(d)) return dt
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const hh = String(d.getHours()).padStart(2, '0')
+      const mm = String(d.getMinutes()).padStart(2, '0')
+      return `${y}-${m}-${day} ${hh}:${mm}`
+    } catch {
+      return dt
+    }
   }
+
+  const formatDate = (dt) => {
+    if (!dt) return '-'
+    const d = typeof dt === 'string' ? new Date(dt) : dt
+    if (isNaN(d)) return dt
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const weekday = ['일','월','화','수','목','금','토'][d.getDay()]
+    return `${y}.${m}.${day} (${weekday})`
+  }
+
+  const formatTime = (dt) => {
+    if (!dt) return '-'
+    const d = typeof dt === 'string' ? new Date(dt) : dt
+    if (isNaN(d)) return dt
+    const hh = String(d.getHours()).padStart(2, '0')
+    const mm = String(d.getMinutes()).padStart(2, '0')
+    return `${hh}:${mm}`
+  }
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        setLoading(true)
+        const [roomData, membersRes, finalRes] = await Promise.all([
+          getGroupDetail(id),
+          getGroupMembers(id),
+          getFinalPlans(id)
+        ])
+        setRoom(roomData)
+        setMembers(membersRes?.Members || [])
+        setIsLeader(Boolean(finalRes?.isLeader))
+        // 백엔드 응답 키: planList
+        setFinalPlans(Array.isArray(finalRes?.planList) ? finalRes.planList : [])
+        setInviteLink(`https://gachigaja.com/invite/${id}`)
+      } catch (e) {
+        setError(e.message || '확정 계획을 불러오는 중 오류가 발생했습니다')
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (id) run()
+  }, [id, searchParams])
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(inviteLink)
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner label="확정 계획을 불러오는 중..." size={44} />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/rooms" className="flex items-center gap-2">
@@ -98,75 +108,107 @@ export default function ConfirmedPlanPage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
+          <button
+            onClick={() => navigate("/rooms")}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            여행 목록으로 돌아가기
+          </button>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
             <div>
               <Badge className="mb-2">확정됨</Badge>
-              <h1 className="text-3xl font-bold text-foreground">제주도 가족 여행</h1>
+              <h1 className="text-3xl font-bold text-foreground">{room?.title || '여행 계획'}</h1>
             </div>
-            <Link to={`/rooms/${id}/confirmed/edit`} className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full bg-transparent">
-                <Edit className="h-4 w-4 mr-2" />
-                계획 수정
-              </Button>
-            </Link>
+            {isLeader && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Link to={`/rooms/${id}/confirmed/edit`} className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full bg-transparent">
+                    <Edit className="h-4 w-4 mr-2" />
+                    계획 수정
+                  </Button>
+                </Link>
+                <Button
+                  variant="outline"
+                  className="bg-transparent text-muted-foreground border-border hover:bg-red-600 hover:text-white"
+                  onClick={async () => {
+                    if (!confirm('정말 이 모임을 삭제하시겠습니까? 삭제 후 되돌릴 수 없습니다.')) return
+                    try {
+                      await deleteGroup(id)
+                      alert('모임이 삭제되었습니다')
+                      navigate('/rooms')
+                    } catch (e) {
+                      alert(e.message || '모임 삭제 중 오류가 발생했습니다')
+                    }
+                  }}
+                >
+                  모임 삭제
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Main Content */}
             <div className="lg:col-span-2 space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    여행 일정
+                    확정된 계획
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {schedule.map((day) => (
-                    <Collapsible
-                      key={day.day}
-                      open={expandedDays.includes(day.day)}
-                      onOpenChange={() => toggleDay(day.day)}
-                    >
-                      <Card>
-                        <CollapsibleTrigger className="w-full">
-                          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center justify-between">
-                              <div className="text-left">
-                                <h3 className="font-semibold text-foreground">Day {day.day}</h3>
-                                <p className="text-sm text-muted-foreground">{day.date}</p>
-                              </div>
-                              {expandedDays.includes(day.day) ? (
-                                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                              ) : (
-                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                              )}
-                            </div>
-                          </CardHeader>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <CardContent className="pt-0">
-                            <div className="space-y-3">
-                              {day.activities.map((activity, idx) => (
-                                <div key={idx} className="flex gap-4 text-sm">
-                                  <span className="text-muted-foreground font-medium w-16">{activity.time}</span>
-                                  <div className="flex-1">
-                                    <span className="text-foreground">{activity.location}</span>
-                                    <span className="text-muted-foreground ml-2">({activity.transport})</span>
-                                  </div>
+                <CardContent>
+                  {error ? (
+                    <p className="text-sm text-destructive">{error}</p>
+                  ) : finalPlans.length ? (
+                    (() => {
+                      // 날짜별 그룹핑
+                      const byDay = finalPlans.reduce((acc, p) => {
+                        const key = (typeof p.startingTime === 'string' ? p.startingTime.split('T')[0] : new Date(p.startingTime).toISOString().split('T')[0])
+                        acc[key] = acc[key] || []
+                        acc[key].push(p)
+                        return acc
+                      }, {})
+                      const sortedDays = Object.keys(byDay).sort()
+                      return (
+                        <div className="space-y-6">
+                          {sortedDays.map((dayKey, idx) => (
+                            <div key={dayKey} className="border border-border rounded-lg">
+                              <div className="border-b border-border p-3 flex items-center justify-between bg-muted/30">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Day {idx + 1}</p>
+                                  <p className="text-lg font-semibold text-foreground">{formatDate(dayKey)}</p>
                                 </div>
-                              ))}
+                              </div>
+                              <div className="p-3 space-y-3">
+                                {byDay[dayKey]
+                                  .sort((a,b)=>new Date(a.startingTime)-new Date(b.startingTime))
+                                  .map((p)=> (
+                                    <div key={p.planId} className="grid grid-cols-[80px_1fr] gap-4 items-start">
+                                      <div className="text-sm font-semibold text-foreground">{formatTime(p.startingTime)}</div>
+                                      <div className="space-y-1">
+                                        <div className="text-sm text-foreground whitespace-pre-line">{p.info}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {p.location ? `${p.location}` : ''}
+                                          {p.transportation ? ` (${p.transportation})` : ''}
+                                          {p.cost ? ` · 비용 ${p.cost}` : ''}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
                             </div>
-                          </CardContent>
-                        </CollapsibleContent>
-                      </Card>
-                    </Collapsible>
-                  ))}
+                          ))}
+                        </div>
+                      )
+                    })()
+                  ) : (
+                    <p className="text-sm text-muted-foreground">확정된 계획이 아직 없습니다.</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Sidebar */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -178,12 +220,12 @@ export default function ConfirmedPlanPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {members.map((member) => (
-                      <div key={member.id} className="flex items-center gap-2">
+                      <div key={member.userId} className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                          {member.name[0]}
+                          {member.nickname?.[0] || '멤'}
                         </div>
-                        <span className="text-sm text-foreground">{member.name}</span>
-                        {member.id === hostId && (
+                        <span className="text-sm text-foreground">{member.nickname}</span>
+                        {member.role === 'LEADER' && (
                           <Badge variant="secondary" className="text-xs flex items-center gap-1">
                             <Crown className="h-3 w-3" />
                             호스트
@@ -216,19 +258,15 @@ export default function ConfirmedPlanPage() {
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">목적지</span>
-                    <span className="font-medium text-foreground">제주도</span>
+                    <span className="font-medium text-foreground">{room?.region || '-'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">일정</span>
-                    <span className="font-medium text-foreground">2024.12.20 - 12.23</span>
+                    <span className="font-medium text-foreground">{room?.period || '-'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">인원</span>
-                    <span className="font-medium text-foreground">4명</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">예산</span>
-                    <span className="font-medium text-foreground">500,000원/인</span>
+                    <span className="font-medium text-foreground">{members.length}명</span>
                   </div>
                 </CardContent>
               </Card>

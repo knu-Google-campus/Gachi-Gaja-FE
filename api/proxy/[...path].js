@@ -1,43 +1,67 @@
 export default async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-USER-ID');
+    return res.status(200).end();
+  }
+
   const { path = [] } = req.query;
   const targetPath = Array.isArray(path) ? path.join('/') : path;
 
   const backendOrigin = process.env.BACKEND_ORIGIN;
   const url = `${backendOrigin}/api/${targetPath}`;
 
-  const headers = new Headers();
-  // Forward allowed headers except host-related ones
+  // Build headers object for upstream fetch
+  const headers = {};
   for (const [key, value] of Object.entries(req.headers)) {
-    if (['host', 'connection', 'content-length'].includes(key.toLowerCase())) continue;
-    headers.set(key, value);
+    const k = key.toLowerCase();
+    if (['host', 'connection', 'content-length'].includes(k)) continue;
+    headers[key] = value;
   }
 
-  const init = {
-    method: req.method,
-    headers,
-    body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req.body,
-  };
+  const hasBody = !(req.method === 'GET' || req.method === 'HEAD');
+  let body;
+  if (hasBody) {
+    body = await streamToBuffer(req);
+  }
 
   try {
-    const response = await fetch(url, init);
-    const buffer = await response.arrayBuffer();
+    const response = await fetch(url, {
+      method: req.method,
+      headers,
+      body: hasBody ? body : undefined,
+    });
 
-    // Pass through status and headers
-    for (const [key, value] of response.headers) {
-      // Avoid setting forbidden headers
-      if (['content-length'].includes(key.toLowerCase())) continue;
+    // Pass through response headers
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() === 'content-length') return;
       res.setHeader(key, value);
-    }
+    });
 
-    // Set CORS for same-origin access (since this function is under the app domain)
+    // Add permissive CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-USER-ID');
 
-    res.status(response.status).send(Buffer.from(buffer));
+    const arrayBuf = await response.arrayBuffer();
+    res.status(response.status).send(Buffer.from(arrayBuf));
   } catch (err) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-USER-ID');
     res.status(502).json({ error: 'Proxy error', details: String(err) });
   }
+}
+
+function streamToBuffer(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', reject);
+  });
 }
 
 export const config = {

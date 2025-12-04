@@ -2,16 +2,18 @@ import axios from 'axios'
 
 // 기본 Axios 인스턴스
 const useProxy = import.meta.env.VITE_USE_PROXY === 'true'
-const proxyPrefix = import.meta.env.VITE_PROXY_PREFIX || '/backend'
+// 개발(vite)에서는 '/backend' 프록시, 배포(vercel functions)에서는 '/api/proxy' 사용
+const devProxyPrefix = import.meta.env.VITE_PROXY_PREFIX || '/backend'
+const prodProxyPrefix = '/api/proxy'
 const envBase = import.meta.env.VITE_API_BASE_URL
 const isAbsolute = typeof envBase === 'string' && /^https?:\/\//i.test(envBase)
 let baseURL
 if (useProxy) {
-  // 프록시 사용 시 절대 URL이 설정되어 있으면 우회하므로 무시하고 proxyPrefix 사용
-  // 상대 경로가 주어지면 그대로 사용
-  baseURL = isAbsolute ? proxyPrefix : (envBase || proxyPrefix)
+  // 프록시 사용: 개발과 배포에서 서로 다른 프록시 엔드포인트 사용
+  const prefix = import.meta.env.DEV ? devProxyPrefix : prodProxyPrefix
+  baseURL = prefix
 } else {
-  // 프록시 미사용 시 절대 URL(또는 상대 '/api') 사용
+  // 프록시 미사용: 절대 URL(또는 상대 '/api') 사용
   baseURL = envBase || '/api'
 }
 if (import.meta.env.DEV) {

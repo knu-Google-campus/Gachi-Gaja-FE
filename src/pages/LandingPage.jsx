@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plane } from "lucide-react"
 import { loginUser, registerUser } from "@/api/auth"
+import { toast } from "react-toastify"
 
 export default function LandingPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -15,11 +16,16 @@ export default function LandingPage() {
   const [name, setName] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [passwordError, setPasswordError] = useState("")
+  const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       if (isLogin) {
+        const em = (email || "").trim()
+        const pw = (password || "").trim()
+        if (!em || !pw) { toast.warn("이메일과 비밀번호를 입력해 주세요."); return }
+        setSubmitting(true)
         const data = await loginUser({ email, password })
         localStorage.setItem("userId", data.userId);
         navigate("/rooms")
@@ -29,23 +35,16 @@ export default function LandingPage() {
         const pw = password || ""
         const hasMinLen = pw.length >= 8
         const hasSpecial = /[^A-Za-z0-9]/.test(pw)
-        if (!hasMinLen || !hasSpecial) {
-          setPasswordError("비밀번호는 8자리 이상이며 특수문자를 포함해야 합니다.")
-          alert("비밀번호는 8자리 이상이며 특수문자를 포함해야 합니다.")
-          return
-        }
-        if (password !== confirmPassword) {
-          setPasswordError("비밀번호가 일치하지 않습니다.")
-          alert("비밀번호가 일치하지 않습니다.")
-          return
-        }
+        if (!hasMinLen || !hasSpecial) { setPasswordError("비밀번호는 8자리 이상이며 특수문자를 포함해야 합니다."); toast.error("비밀번호는 8자리 이상이며 특수문자를 포함해야 합니다."); return }
+        if (password !== confirmPassword) { setPasswordError("비밀번호가 일치하지 않습니다."); toast.error("비밀번호가 일치하지 않습니다."); return }
+        setSubmitting(true)
 
         const data = await registerUser({
           email,
           password,
           nickName: name
         })
-        alert("회원가입이 완료되었습니다.")
+        toast.success("회원가입이 완료되었습니다.")
 
         setIsLogin(true)
         setEmail("")
@@ -56,7 +55,9 @@ export default function LandingPage() {
       }
     } catch (error) {
       console.error("에러 : ", error)
-      alert(error.response?.data?.message || "작업 중 오류가 발생했습니다.")
+      toast.error(error.response?.data?.message || "작업 중 오류가 발생했습니다.")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -135,21 +136,21 @@ export default function LandingPage() {
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="email">이메일</Label>
-                  <Input id="email" type="email" placeholder="example@email.com" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Input id="email" type="email" placeholder="example@email.com" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">비밀번호</Label>
-                  <Input id="password" type="password" placeholder="••••••••" className="h-11" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input id="password" type="password" placeholder="••••••••" className="h-11" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">비밀번호 확인</Label>
-                    <Input id="confirm-password" type="password" placeholder="••••••••" className="h-11" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    <Input id="confirm-password" type="password" placeholder="••••••••" className="h-11" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                     {passwordError && (<p className="text-red-500 text-xs mt-1">{passwordError}</p>)}
                   </div>
                 )}
-                <Button type="submit" className="w-full h-11 text-base">
-                  {isLogin ? "로그인" : "회원가입"}
+                <Button type="submit" className="w-full h-11 text-base" disabled={submitting} aria-busy={submitting}>
+                  {isLogin ? (submitting ? "로그인 중..." : "로그인") : (submitting ? "회원가입 중..." : "회원가입")}
                 </Button>
               </form>
 

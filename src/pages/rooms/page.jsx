@@ -18,6 +18,7 @@ import { Header } from "@/components/header"
 import { Plane, Plus, LogIn, Calendar, MapPin, Users, Crown } from "lucide-react"
 import { getMyGroups } from "@/api/group"
 import { acceptInvite } from "@/api/invites"
+import { toast } from "react-toastify"
 
 const currentUserId = localStorage.getItem('userId')
 
@@ -61,12 +62,12 @@ export default function RoomsPage() {
         await acceptInvite(targetId)
         return navigate(`/rooms/${targetId}`)
       } catch (e) {
-        window.alert(e.message || '초대 수락에 실패했습니다.')
+        toast.error(e.message || '초대 수락에 실패했습니다.')
         return
       }
     }
 
-    window.alert('유효한 초대/그룹 링크를 입력해주세요.')
+    toast.warn('유효한 초대/그룹 링크를 입력해주세요.')
   }
 
   return (

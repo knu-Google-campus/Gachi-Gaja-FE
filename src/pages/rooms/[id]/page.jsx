@@ -13,6 +13,7 @@ import { Copy, Settings, Calendar, Users, Edit, Crown, Trash2, ArrowLeft } from 
 import { getGroupDetail, getGroupMembers, deleteGroup } from "@/api/group"
 import { getRequirements, createRequirement, updateRequirement } from "@/api/requirements"
 import { LoadingAnimation } from "@/components/loading-animation"
+import { toast } from "react-toastify"
 export default function RoomDetailPage() {
   const navigate = useNavigate()
   const { id: roomId } = useParams()
@@ -55,7 +56,7 @@ export default function RoomDetailPage() {
         setRequirements(reqRes.requirements || [])
       } catch (error) {
         console.error("데이터 로딩 실패 : ", error)
-        alert("존재하지 않는 방이거나 오류가 발생했습니다.")
+        toast.error("존재하지 않는 방이거나 오류가 발생했습니다.")
         navigate("/rooms")
       } finally {
         setIsLoading(false)
@@ -92,7 +93,7 @@ export default function RoomDetailPage() {
         plusRequirement: reqForm.plusRequirement || opinionText.trim(),
       }
       const hasAny = Object.values(payload).some(v => (v || '').trim() !== '')
-      if (!hasAny) { alert('최소 한 항목은 입력해주세요'); return }
+      if (!hasAny) { toast.warn('최소 한 항목은 입력해주세요'); return }
       if (editingId) {
         await updateRequirement(roomId, editingId, payload)
         setRequirements(prev => prev.map(r => r.requirementId === editingId ? { ...r, ...payload } : r))
@@ -136,15 +137,12 @@ export default function RoomDetailPage() {
   const copyInviteLink = () => {
     const currentUrl = `https://gachigaja.com/invite/${roomId}`
     navigator.clipboard.writeText(currentUrl)
-    alert("링크가 복사되었습니다!")
+    toast.success("링크가 복사되었습니다!")
   }
 
   const handleGenerateTrip = async () => {
     const myInfo = room?.members?.find(m => m.userId === currentUserId)
-    if (myInfo?.role !== 'LEADER') {
-      alert("방장만 여행을 생성할 수 있습니다.")
-      return
-    }
+    if (myInfo?.role !== 'LEADER') { toast.warn("방장만 여행을 생성할 수 있습니다."); return }
     try {
       setIsGenerating(true)
       // 후보 생성 트리거 (POST) 후 방으로 유지
@@ -154,7 +152,7 @@ export default function RoomDetailPage() {
       const updated = await getGroupDetail(roomId)
       setRoom(prev => ({ ...(prev||{}), ...updated }))
     } catch (e) {
-      alert(e.message || '여행 후보 생성 중 오류가 발생했습니다')
+      toast.error(e.message || '여행 후보 생성 중 오류가 발생했습니다')
     } finally {
       setIsGenerating(false)
     }
@@ -215,10 +213,10 @@ export default function RoomDetailPage() {
                     if (!confirm('정말 이 모임을 삭제하시겠습니까? 삭제 후 되돌릴 수 없습니다.')) return
                     try {
                       await deleteGroup(roomId)
-                      alert('모임이 삭제되었습니다')
+                      toast.success('모임이 삭제되었습니다')
                       navigate('/rooms')
                     } catch (e) {
-                      alert(e.message || '모임 삭제 중 오류가 발생했습니다')
+                      toast.error(e.message || '모임 삭제 중 오류가 발생했습니다')
                     }
                   }}
                 >

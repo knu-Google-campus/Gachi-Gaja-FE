@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Plane, ArrowLeft, Plus, Trash2 } from "lucide-react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { getFinalPlans, updatePlan, addNewPlan, deletePlan } from "@/api/plans"
+import { toast } from "react-toastify"
  
 
 export default function EditConfirmedPlanPage() {
@@ -88,7 +89,7 @@ export default function EditConfirmedPlanPage() {
       }
       navigate(`/rooms/${id}/confirmed`)
     } catch (err) {
-      alert(err.message || '저장 중 오류가 발생했습니다')
+      toast.error(err.message || '저장 중 오류가 발생했습니다')
     }
   }
 

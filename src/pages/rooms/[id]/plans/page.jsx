@@ -11,6 +11,7 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import { getVoteSummary, voteCandidatePlan, generateCandidates } from "@/api/candidates"
 import { confirmPlans } from "@/api/plans"
 import { getGroupDetail, getGroupMembers } from "@/api/group"
+import { toast } from "react-toastify"
 
 export default function PlansPage() {
   const navigate = useNavigate()
@@ -99,7 +100,7 @@ export default function PlansPage() {
       setCandidatePlans(plans)
       if (plans.length) setSelectedPlan(plans[0].candidatePlanId)
     } catch (e) {
-      alert(e.message || '재생성 실패')
+      toast.error(e.message || '재생성 실패')
     } finally {
       setIsGenerating(false)
     }
@@ -112,7 +113,7 @@ export default function PlansPage() {
       setCandidatePlans(summary.candidatePlanList || [])
       setUserVote(candidatePlanId)
     } catch (e) {
-      alert(e.message || '투표 실패')
+      toast.error(e.message || '투표 실패')
     }
   }
 
@@ -122,7 +123,7 @@ export default function PlansPage() {
     try {
       // 방장만 확정 가능: 단순 프런트 가드
       const isLeader = members.find(m => m.userId === localStorage.getItem('userId'))?.role === 'LEADER'
-      if (!isLeader) { alert('방장만 확정할 수 있습니다'); return }
+      if (!isLeader) { toast.warn('방장만 확정할 수 있습니다'); return }
       // 사용자 확인 알림
       const ok = confirm('투표수에 따라 계획을 확정하시겠습니까?')
       if (!ok) return
@@ -130,7 +131,7 @@ export default function PlansPage() {
       await confirmPlans(id)
       navigate(`/rooms/${id}/confirmed`)
     } catch (e) {
-      alert(e.message || '계획 확정 중 오류가 발생했습니다')
+      toast.error(e.message || '계획 확정 중 오류가 발생했습니다')
     } finally {
       setIsConfirming(false)
     }

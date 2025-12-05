@@ -11,6 +11,7 @@ import { Header } from "@/components/header"
 import { ArrowLeft } from "lucide-react"
 import { useEffect } from "react"
 import { getGroupDetail, updateGroup } from "@/api/group"
+import { toast } from "react-toastify"
 
 export default function EditRoomPage() {
   const navigate = useNavigate()
@@ -57,7 +58,7 @@ export default function EditRoomPage() {
           endDate: data.endingDay || prev.endDate
         }))
       } catch (e) {
-        alert(e.message || '그룹 정보를 불러오지 못했습니다')
+        toast.error(e.message || '그룹 정보를 불러오지 못했습니다')
         navigate('/rooms')
       }
     }
@@ -82,7 +83,7 @@ export default function EditRoomPage() {
       await updateGroup(roomId, payload)
       navigate(`/rooms/${roomId}`)
     } catch (e) {
-      alert(e.message || '수정 실패')
+      toast.error(e.message || '수정 실패')
     }
   }
 

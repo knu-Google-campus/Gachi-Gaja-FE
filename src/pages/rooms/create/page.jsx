@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Header } from "@/components/header"
 import { ArrowLeft } from "lucide-react"
 import { createGroup } from "@/api/group"
+import { toast } from "react-toastify"
 
 export default function CreateRoomPage() {
   const navigate = useNavigate()
@@ -43,29 +44,14 @@ export default function CreateRoomPage() {
       const today = new Date()
       // normalize today to date-only
       today.setHours(0,0,0,0)
-      if (isNaN(start) || isNaN(end)) {
-        alert('출발/종료 일자를 올바르게 입력해주세요')
-        return
-      }
-      if (start > end) {
-        alert('출발 일자는 종료 일자보다 이후일 수 없습니다')
-        return
-      }
+      if (isNaN(start) || isNaN(end)) { toast.warn('출발/종료 일자를 올바르게 입력해주세요'); return }
+      if (start > end) { toast.warn('출발 일자는 종료 일자보다 이후일 수 없습니다'); return }
       const dl = new Date(formData.deadline)
-      if (isNaN(dl)) {
-        alert('의견 수집 마감일을 올바르게 입력해주세요')
-        return
-      }
+      if (isNaN(dl)) { toast.warn('의견 수집 마감일을 올바르게 입력해주세요'); return }
       dl.setHours(0,0,0,0)
-      if (dl < today) {
-        alert('의견 수집 마감일은 오늘보다 이전일 수 없습니다')
-        return
-      }
+      if (dl < today) { toast.warn('의견 수집 마감일은 오늘보다 이전일 수 없습니다'); return }
       // 교통 수단 필수 선택 가드
-      if (!formData.transportation) {
-        alert('교통 수단을 선택해주세요')
-        return
-      }
+      if (!formData.transportation) { toast.warn('교통 수단을 선택해주세요'); return }
       const payload = {
         title: formData.name,
         region: formData.region,
@@ -86,7 +72,7 @@ export default function CreateRoomPage() {
 
     } catch (error) {
       console.error("그룹 생성 실패 : ", error);
-      alert(error.response?.data?.message || "여행 방 생성 중 오류가 발생했습니다.");
+      toast.error(error.response?.data?.message || "여행 방 생성 중 오류가 발생했습니다.");
     }
   };
 

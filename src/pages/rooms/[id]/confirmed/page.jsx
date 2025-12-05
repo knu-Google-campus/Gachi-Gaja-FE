@@ -8,6 +8,7 @@ import { Plane, Copy, Calendar, Edit, Users, Crown, ArrowLeft } from "lucide-rea
 import { Link, useParams, useSearchParams, useNavigate } from "react-router-dom"
 import { getGroupDetail, getGroupMembers, deleteGroup } from "@/api/group"
 import { getFinalPlans } from "@/api/plans"
+import { toast } from "react-toastify"
  
 
 export default function ConfirmedPlanPage() {
@@ -85,6 +86,7 @@ export default function ConfirmedPlanPage() {
 
   const copyInviteLink = () => {
     navigator.clipboard.writeText(inviteLink)
+    toast.success('링크가 복사되었습니다!')
   }
 
   if (loading) {
@@ -135,10 +137,10 @@ export default function ConfirmedPlanPage() {
                     if (!confirm('정말 이 모임을 삭제하시겠습니까? 삭제 후 되돌릴 수 없습니다.')) return
                     try {
                       await deleteGroup(id)
-                      alert('모임이 삭제되었습니다')
+                      toast.success('모임이 삭제되었습니다')
                       navigate('/rooms')
                     } catch (e) {
-                      alert(e.message || '모임 삭제 중 오류가 발생했습니다')
+                      toast.error(e.message || '모임 삭제 중 오류가 발생했습니다')
                     }
                   }}
                 >

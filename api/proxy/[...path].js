@@ -10,7 +10,10 @@ export default async function handler(req, res) {
   const { path = [] } = req.query;
   const targetPath = Array.isArray(path) ? path.join('/') : path;
 
-  const backendOrigin = process.env.BACKEND_ORIGIN;
+  // Fix: Strip trailing slash from BACKEND_ORIGIN
+  // This prevents (1) Double slashes in URL (//api/login) which cause 403 Auth errors
+  // This prevents (2) Malformed Origin headers (ends with /) which cause CORS rejection
+  const backendOrigin = process.env.BACKEND_ORIGIN.replace(/\/$/, '');
   const url = `${backendOrigin}/api/${targetPath}`;
 
   // Build headers object for upstream fetch
@@ -21,9 +24,9 @@ export default async function handler(req, res) {
     if (['host', 'connection', 'content-length'].includes(k)) continue;
     headers[key] = value;
   }
-  // Set Origin/Referer to backend origin to satisfy CSRF policies expecting server-origin requests
-  headers['Origin'] = backendOrigin;
-  headers['Referer'] = backendOrigin;
+  // Fix: Do NOT overwrite Origin with backendOrigin.
+  // The browser sends a correct Origin (e.g. https://...vercel.app) which is whitelisted.
+  // Overwriting it with backendOrigin (system IP) causes CORS failure.
 
   const hasBody = !(req.method === 'GET' || req.method === 'HEAD');
   let body;

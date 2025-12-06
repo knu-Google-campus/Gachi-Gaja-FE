@@ -30,12 +30,23 @@ export default function LandingPage() {
         localStorage.setItem("userId", data.userId);
         navigate("/rooms")
       } else{
-        // 비밀번호 검증
-        // 비밀번호 검증: 8자 이상 + 특수문자 포함
+        // 비밀번호 검증: 8~16자리 + 영문 + 숫자 + 특수문자 포함
         const pw = password || ""
-        const hasMinLen = pw.length >= 8
-        const hasSpecial = /[^A-Za-z0-9]/.test(pw)
-        if (!hasMinLen || !hasSpecial) { setPasswordError("비밀번호는 8자리 이상이며 특수문자를 포함해야 합니다."); toast.error("비밀번호는 8자리 이상이며 특수문자를 포함해야 합니다."); return }
+        const hasLetter = /[A-Za-z]/.test(pw)
+        const hasNumber = /\d/.test(pw)
+        const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw)
+        const isValidLength = pw.length >= 8 && pw.length <= 16
+
+        if (!isValidLength) { 
+          setPasswordError("비밀번호는 8~16자리여야 합니다."); 
+          toast.error("비밀번호는 8~16자리여야 합니다."); 
+          return 
+        }
+        if (!hasLetter || !hasNumber || !hasSpecial) { 
+          setPasswordError("비밀번호는 영문, 숫자, 특수문자를 모두 포함해야 합니다."); 
+          toast.error("비밀번호는 영문, 숫자, 특수문자를 모두 포함해야 합니다."); 
+          return 
+        }
         if (password !== confirmPassword) { setPasswordError("비밀번호가 일치하지 않습니다."); toast.error("비밀번호가 일치하지 않습니다."); return }
         setSubmitting(true)
 

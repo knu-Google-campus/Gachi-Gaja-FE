@@ -7,22 +7,26 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  let { path = [] } = req.query;
+  // Fix: Always prioritize raw URL extraction to prevent truncation and preserve query params
+  // req.url is the ground truth (e.g. "/api/proxy/groups/123?sort=desc")
+  // req.query might be parsed incorrectly or truncated by the framework
+  let targetPath = '';
 
-  // Fallback: If query.path is empty, try to extract from req.url
-  // req.url is likely "/api/proxy/login"
-  if (!path || (Array.isArray(path) && path.length === 0)) {
-    if (req.url.includes('/proxy/')) {
-      const parts = req.url.split('/proxy/');
-      if (parts.length > 1) {
-        path = parts[1].split('?')[0]; // take matched part, ignoring query strings
-        // Remove leading slash if present
-        if (path.startsWith('/')) path = path.substring(1);
-      }
+  if (req.url.includes('/proxy/')) {
+    // Extract everything after '/proxy/'
+    const parts = req.url.split('/proxy/');
+    if (parts.length > 1) {
+      targetPath = parts[1];
+      // Remove leading slash if strictly present (though split usually handles it)
+      if (targetPath.startsWith('/')) targetPath = targetPath.substring(1);
     }
   }
 
-  const targetPath = Array.isArray(path) ? path.join('/') : path;
+  // Fallback to legacy query parsing if URL splitting failed
+  if (!targetPath) {
+    const { path = [] } = req.query;
+    targetPath = Array.isArray(path) ? path.join('/') : path;
+  }
 
   // Fix: Ensure URL logic is safe and log it
   // Even if env var is correct, stripping trailing slash is safer.

@@ -40,3 +40,5 @@ coverage/
 # 잠금 파일(현재 npm 사용; 다른 매니저 Lock은 커밋 방지)
 yarn.lock
 pnpm-lock.yaml
+
+/serverForRef

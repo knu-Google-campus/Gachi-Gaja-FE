@@ -31,7 +31,12 @@ export default async function handler(req, res) {
   // Fix: Ensure URL logic is safe and log it
   // Even if env var is correct, stripping trailing slash is safer.
   const backendOrigin = process.env.BACKEND_ORIGIN.replace(/\/$/, '');
-  const url = `${backendOrigin}/api/${targetPath}${queryString ? `?${queryString}` : ''}`;
+  let url = `${backendOrigin}/api/${targetPath}${queryString ? `?${queryString}` : ''}`;
+  // Final safety: strip any residual framework-added path param
+  url = url.replace(/([?&])path=[^&]*(&|$)/, (m, p1, p2) => {
+    // remove the entire path=... segment, keep leading '?' or '&' only if followed by more params
+    return p2 ? p1 : '';
+  });
 
   console.log(`[Proxy] Requesting: ${url}`);
   console.log(`[Proxy] Method: ${req.method}`);

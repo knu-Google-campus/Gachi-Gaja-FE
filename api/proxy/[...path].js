@@ -7,31 +7,31 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Fix: Always prioritize raw URL extraction to prevent truncation and preserve query params
-  // req.url is the ground truth (e.g. "/api/proxy/groups/123?sort=desc")
-  // req.query might be parsed incorrectly or truncated by the framework
+  // Fix: Robust path + query preservation without relying on req.query
+  // Example incoming: "/api/proxy/groups/123?sort=desc&limit=10"
+  // We want upstream: "<BACKEND_ORIGIN>/api/groups/123?sort=desc&limit=10"
   let targetPath = '';
+  let queryString = '';
 
-  if (req.url.includes('/proxy/')) {
-    // Extract everything after '/proxy/'
-    const parts = req.url.split('/proxy/');
-    if (parts.length > 1) {
-      targetPath = parts[1];
-      // Remove leading slash if strictly present (though split usually handles it)
-      if (targetPath.startsWith('/')) targetPath = targetPath.substring(1);
+  const proxyMarker = '/proxy/';
+  const urlStr = typeof req.url === 'string' ? req.url : '';
+  const idx = urlStr.indexOf(proxyMarker);
+  if (idx >= 0) {
+    const after = urlStr.substring(idx + proxyMarker.length);
+    const qIdx = after.indexOf('?');
+    if (qIdx >= 0) {
+      targetPath = after.substring(0, qIdx);
+      queryString = after.substring(qIdx + 1); // without leading '?'
+    } else {
+      targetPath = after;
     }
-  }
-
-  // Fallback to legacy query parsing if URL splitting failed
-  if (!targetPath) {
-    const { path = [] } = req.query;
-    targetPath = Array.isArray(path) ? path.join('/') : path;
+    if (targetPath.startsWith('/')) targetPath = targetPath.substring(1);
   }
 
   // Fix: Ensure URL logic is safe and log it
   // Even if env var is correct, stripping trailing slash is safer.
   const backendOrigin = process.env.BACKEND_ORIGIN.replace(/\/$/, '');
-  const url = `${backendOrigin}/api/${targetPath}`;
+  const url = `${backendOrigin}/api/${targetPath}${queryString ? `?${queryString}` : ''}`;
 
   console.log(`[Proxy] Requesting: ${url}`);
   console.log(`[Proxy] Method: ${req.method}`);
@@ -45,15 +45,9 @@ export default async function handler(req, res) {
     headers[key] = value;
   }
 
-  // Fix 2: MATCH LOCAL VITE BEHAVIOR
-  // The local vite.config.js explicitly removes the Origin header: `proxyReq.removeHeader('origin')`
-  // This allows the request to be treated as server-to-server, bypassing strict CORS checks.
-  // We do the same here by deleting it.
+  // Match local dev proxy behavior: drop Origin/Referer to avoid strict CORS checks
   delete headers['origin'];
   delete headers['referer'];
-  // Fix: Do NOT overwrite Origin with backendOrigin.
-  // The browser sends a correct Origin (e.g. https://...vercel.app) which is whitelisted.
-  // Overwriting it with backendOrigin (system IP) causes CORS failure.
 
   const hasBody = !(req.method === 'GET' || req.method === 'HEAD');
   let body;

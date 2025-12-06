@@ -24,6 +24,13 @@ export default async function handler(req, res) {
     if (['host', 'connection', 'content-length'].includes(k)) continue;
     headers[key] = value;
   }
+
+  // Fix 2: MATCH LOCAL VITE BEHAVIOR
+  // The local vite.config.js explicitly removes the Origin header: `proxyReq.removeHeader('origin')`
+  // This allows the request to be treated as server-to-server, bypassing strict CORS checks.
+  // We do the same here by deleting it.
+  delete headers['origin'];
+  delete headers['referer'];
   // Fix: Do NOT overwrite Origin with backendOrigin.
   // The browser sends a correct Origin (e.g. https://...vercel.app) which is whitelisted.
   // Overwriting it with backendOrigin (system IP) causes CORS failure.

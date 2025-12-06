@@ -15,17 +15,32 @@ export default async function handler(req, res) {
 
   const proxyMarker = '/proxy/';
   const urlStr = typeof req.url === 'string' ? req.url : '';
+  
+  console.log(`[Proxy] Raw req.url: ${urlStr}`);
+  console.log(`[Proxy] req.query:`, JSON.stringify(req.query));
+  
   // Use WHATWG URL to robustly parse path + query
   const parsed = new URL(urlStr, 'http://local');
   const fullPathname = parsed.pathname || '';
+  const fullSearch = parsed.search || '';
+  
+  console.log(`[Proxy] Parsed pathname: ${fullPathname}`);
+  console.log(`[Proxy] Parsed search: ${fullSearch}`);
+  
   const idx = fullPathname.indexOf(proxyMarker);
   if (idx >= 0) {
     const afterPath = fullPathname.substring(idx + proxyMarker.length); // path part only
     targetPath = afterPath.startsWith('/') ? afterPath.substring(1) : afterPath;
+    console.log(`[Proxy] Extracted targetPath: ${targetPath}`);
+    
     // Preserve original query but drop framework-added artifacts like "path"
     const qs = new URLSearchParams(parsed.search);
+    console.log(`[Proxy] URLSearchParams before delete:`, Array.from(qs.entries()));
+    
     qs.delete('path');
     queryString = qs.toString();
+    console.log(`[Proxy] URLSearchParams after delete path:`, Array.from(qs.entries()));
+    console.log(`[Proxy] Final queryString: ${queryString}`);
   }
 
   // Fix: Ensure URL logic is safe and log it

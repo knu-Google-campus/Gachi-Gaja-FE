@@ -1,0 +1,123 @@
+export default async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-USER-ID');
+    return res.status(200).end();
+  }
+
+  // Robust path + query preservation
+  // Example incoming: "/api/groups/123?sort=desc&limit=10"
+  // We want upstream: "<BACKEND_ORIGIN>/api/groups/123?sort=desc&limit=10"
+  let targetPath = '';
+  let queryString = '';
+
+  const urlStr = typeof req.url === 'string' ? req.url : '';
+  
+  console.log(`[Proxy] Raw req.url: ${urlStr}`);
+  console.log(`[Proxy] req.query:`, JSON.stringify(req.query));
+  
+  // Use WHATWG URL to robustly parse path + query
+  const parsed = new URL(urlStr, 'http://local');
+  const fullPathname = parsed.pathname || '';
+  const fullSearch = parsed.search || '';
+  
+  console.log(`[Proxy] Parsed pathname: ${fullPathname}`);
+  console.log(`[Proxy] Parsed search: ${fullSearch}`);
+  
+  // Extract everything after '/api/'
+  const apiMarker = '/api/';
+  const idx = fullPathname.indexOf(apiMarker);
+  if (idx >= 0) {
+    const afterApi = fullPathname.substring(idx + apiMarker.length); // path part only
+    targetPath = afterApi.startsWith('/') ? afterApi.substring(1) : afterApi;
+    console.log(`[Proxy] Extracted targetPath: ${targetPath}`);
+    
+    // Preserve original query but drop framework-added artifacts like "...path" (catch-all param)
+    const qs = new URLSearchParams(parsed.search);
+    console.log(`[Proxy] URLSearchParams before delete:`, Array.from(qs.entries()));
+    
+    // Remove both 'path' and '...path' (Vercel catch-all artifacts)
+    qs.delete('path');
+    qs.delete('...path');
+    queryString = qs.toString();
+    console.log(`[Proxy] URLSearchParams after delete path:`, Array.from(qs.entries()));
+    console.log(`[Proxy] Final queryString: ${queryString}`);
+  }
+
+  // Ensure URL logic is safe and log it
+  // Even if env var is correct, stripping trailing slash is safer.
+  const backendOrigin = process.env.BACKEND_ORIGIN.replace(/\/$/, '');
+  let url = `${backendOrigin}/api/${targetPath}${queryString ? `?${queryString}` : ''}`;
+  
+  // Final safety: strip any residual framework-added path param
+  url = url.replace(/([?&])\.\.\.path=[^&]*(&|$)/, (m, p1, p2) => {
+    // remove the entire ...path=... segment, keep leading '?' or '&' only if followed by more params
+    return p2 ? p1 : '';
+  });
+
+  console.log(`[Proxy] Requesting: ${url}`);
+  console.log(`[Proxy] Method: ${req.method}`);
+
+  // Build headers object for upstream fetch
+  const headers = {};
+  for (const [key, value] of Object.entries(req.headers)) {
+    const k = key.toLowerCase();
+    // Drop hop-by-hop headers
+    if (['host', 'connection', 'content-length'].includes(k)) continue;
+    headers[key] = value;
+  }
+
+  // Match local dev proxy behavior: drop Origin/Referer to avoid strict CORS checks
+  delete headers['origin'];
+  delete headers['referer'];
+
+  const hasBody = !(req.method === 'GET' || req.method === 'HEAD');
+  let body;
+  if (hasBody) {
+    body = await streamToBuffer(req);
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: req.method,
+      headers,
+      body: hasBody ? body : undefined,
+    });
+
+    // Pass through response headers
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() === 'content-length') return;
+      res.setHeader(key, value);
+    });
+
+    // Add permissive CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-USER-ID');
+
+    const arrayBuf = await response.arrayBuffer();
+    res.status(response.status).send(Buffer.from(arrayBuf));
+  } catch (err) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-USER-ID');
+    res.status(502).json({ error: 'Proxy error', details: String(err) });
+  }
+}
+
+function streamToBuffer(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', reject);
+  });
+}
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};

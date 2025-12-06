@@ -2,9 +2,9 @@ import axios from 'axios'
 
 // 기본 Axios 인스턴스
 const useProxy = import.meta.env.VITE_USE_PROXY === 'true'
-// 개발(vite)에서는 '/backend' 프록시, 배포(vercel functions)에서는 '/api/proxy' 사용
+// 개발(vite)에서는 '/backend' 프록시, 배포(vercel functions)에서는 '/api' catch-all 사용
 const devProxyPrefix = import.meta.env.VITE_PROXY_PREFIX || '/backend'
-const prodProxyPrefix = '/api/proxy'
+const prodProxyPrefix = '/api'
 const envBase = import.meta.env.VITE_API_BASE_URL
 const isAbsolute = typeof envBase === 'string' && /^https?:\/\//i.test(envBase)
 let baseURL

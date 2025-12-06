@@ -7,7 +7,21 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { path = [] } = req.query;
+  let { path = [] } = req.query;
+
+  // Fallback: If query.path is empty, try to extract from req.url
+  // req.url is likely "/api/proxy/login"
+  if (!path || (Array.isArray(path) && path.length === 0)) {
+    if (req.url.includes('/proxy/')) {
+      const parts = req.url.split('/proxy/');
+      if (parts.length > 1) {
+        path = parts[1].split('?')[0]; // take matched part, ignoring query strings
+        // Remove leading slash if present
+        if (path.startsWith('/')) path = path.substring(1);
+      }
+    }
+  }
+
   const targetPath = Array.isArray(path) ? path.join('/') : path;
 
   // Fix: Ensure URL logic is safe and log it

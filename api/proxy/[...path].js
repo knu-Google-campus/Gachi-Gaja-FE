@@ -10,11 +10,13 @@ export default async function handler(req, res) {
   const { path = [] } = req.query;
   const targetPath = Array.isArray(path) ? path.join('/') : path;
 
-  // Fix: Strip trailing slash from BACKEND_ORIGIN
-  // This prevents (1) Double slashes in URL (//api/login) which cause 403 Auth errors
-  // This prevents (2) Malformed Origin headers (ends with /) which cause CORS rejection
+  // Fix: Ensure URL logic is safe and log it
+  // Even if env var is correct, stripping trailing slash is safer.
   const backendOrigin = process.env.BACKEND_ORIGIN.replace(/\/$/, '');
   const url = `${backendOrigin}/api/${targetPath}`;
+
+  console.log(`[Proxy] Requesting: ${url}`);
+  console.log(`[Proxy] Method: ${req.method}`);
 
   // Build headers object for upstream fetch
   const headers = {};

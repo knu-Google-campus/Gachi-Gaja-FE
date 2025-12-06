@@ -33,11 +33,13 @@ export default async function handler(req, res) {
     targetPath = afterPath.startsWith('/') ? afterPath.substring(1) : afterPath;
     console.log(`[Proxy] Extracted targetPath: ${targetPath}`);
     
-    // Preserve original query but drop framework-added artifacts like "path"
+    // Preserve original query but drop framework-added artifacts like "...path" (catch-all param)
     const qs = new URLSearchParams(parsed.search);
     console.log(`[Proxy] URLSearchParams before delete:`, Array.from(qs.entries()));
     
+    // Remove both 'path' and '...path' (Vercel catch-all artifacts)
     qs.delete('path');
+    qs.delete('...path');
     queryString = qs.toString();
     console.log(`[Proxy] URLSearchParams after delete path:`, Array.from(qs.entries()));
     console.log(`[Proxy] Final queryString: ${queryString}`);

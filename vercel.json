@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/backend/(.*)",
+      "source": "/api/(.*)",
       "destination": "http://35.230.19.241:8080/api/$1"
     }
   ]

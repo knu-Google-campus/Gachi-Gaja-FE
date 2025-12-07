@@ -301,7 +301,7 @@ export default function RoomDetailPage() {
                                     </div>
                                     <div className="space-y-2">
                                       <Label htmlFor="lodgingCriteria">숙소 기준</Label>
-                                      <Input id="lodgingCriteria" value={reqForm.lodgingCriteria} onChange={(e)=>setReqForm(f=>({...f, lodgingCriteria: e.target.value}))} />
+                                      <Input id="lodgingCriteria" value={reqForm.lodgingCriteria} onChange={(e)=>setReqForm(f=>({...f, lodgingCriteria: e.target.value}))} placeholder="예: 한 곳에 머물기/매일 이동" />
                                     </div>
                                     <div className="space-y-2">
                                       <Label htmlFor="lodgingType">숙소 종류</Label>
@@ -318,11 +318,11 @@ export default function RoomDetailPage() {
                                     </div>
                                     <div className="space-y-2">
                                       <Label htmlFor="eatingHabit">식습관</Label>
-                                      <Input id="eatingHabit" value={reqForm.eatingHabit} onChange={(e)=>setReqForm(f=>({...f, eatingHabit: e.target.value}))} />
+                                      <Input id="eatingHabit" value={reqForm.eatingHabit} onChange={(e)=>setReqForm(f=>({...f, eatingHabit: e.target.value}))} placeholder="예: 채식주의/알러지/야식선호" />
                                     </div>
                                     <div className="space-y-2">
                                       <Label htmlFor="distance">이동 거리</Label>
-                                      <Input id="distance" value={reqForm.distance} onChange={(e)=>setReqForm(f=>({...f, distance: e.target.value}))} />
+                                      <Input id="distance" value={reqForm.distance} onChange={(e)=>setReqForm(f=>({...f, distance: e.target.value}))} placeholder="예: 매일 2시간 이동 가능" />
                                     </div>
                                   </div>
                                   <div className="space-y-2">

@@ -156,7 +156,8 @@ export default function EditRoomPage() {
                     id="startDate"
                     type="date"
                     value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}                   
+                    max="9999-12-31"
                     required
                   />
                 </div>
@@ -167,6 +168,7 @@ export default function EditRoomPage() {
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    max="9999-12-31"
                     required
                   />
                 </div>
@@ -203,6 +205,7 @@ export default function EditRoomPage() {
                   type="date"
                   value={formData.deadline}
                   onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                  max="9999-12-31"
                   required
                 />
               </div>

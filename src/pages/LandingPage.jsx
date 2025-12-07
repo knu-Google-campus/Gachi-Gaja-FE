@@ -66,7 +66,7 @@ export default function LandingPage() {
       }
     } catch (error) {
       console.error("에러 : ", error)
-      const errorMessage = error.status === 400 
+      const errorMessage = error.status === 401
         ? "로그인 정보가 일치하지 않습니다."
         : error.response?.data?.message || "작업 중 오류가 발생했습니다."
       toast.error(errorMessage)

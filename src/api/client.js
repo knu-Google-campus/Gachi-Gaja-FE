@@ -16,9 +16,6 @@ if (useProxy) {
   // 프록시 미사용: 절대 URL(또는 상대 '/api') 사용
   baseURL = envBase || '/api'
 }
-if (import.meta.env.DEV) {
-  console.debug('[api] baseURL =', baseURL, '(useProxy:', useProxy + ')')
-}
 const apiClient = axios.create({
   baseURL,
   timeout: 10000,
@@ -45,10 +42,6 @@ apiClient.interceptors.request.use((config) => {
   if (!isAuthFree && token) {
     // 기존 값이 있으면 덮어씀
     config.headers['Authorization'] = `Bearer ${token}`
-    if (import.meta.env.DEV) {
-      // lightweight debug to confirm source of token during development
-      console.debug('[api] Authorization set from', tokenSource)
-    }
   } else {
     // 토큰이 없으면 Authorization 헤더 제거
     if ('Authorization' in config.headers) delete config.headers['Authorization']

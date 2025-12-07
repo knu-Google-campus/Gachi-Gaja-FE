@@ -39,7 +39,6 @@ export default function PlansPage() {
         setRoom(data)
         setMembers(membersRes?.Members || [])
       } catch (e) {
-        // 그룹 정보 실패는 치명적이지 않으므로 조용히 무시
         console.warn('그룹 정보 로드 실패', e)
       }
     }

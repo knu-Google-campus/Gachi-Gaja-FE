@@ -66,7 +66,6 @@ export default function CreateRoomPage() {
       };
 
       const response = await createGroup(payload);
-      console.log("그룹 생성 성공 : ", response); // 디버깅용으로 추가해둠
 
       navigate(`/rooms/${response.groupId}`);
 

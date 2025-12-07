@@ -66,7 +66,10 @@ export default function LandingPage() {
       }
     } catch (error) {
       console.error("에러 : ", error)
-      toast.error(error.response?.data?.message || "작업 중 오류가 발생했습니다.")
+      const errorMessage = error.status === 400 
+        ? "로그인 정보가 일치하지 않습니다."
+        : error.response?.data?.message || "작업 중 오류가 발생했습니다."
+      toast.error(errorMessage)
     } finally {
       setSubmitting(false)
     }
